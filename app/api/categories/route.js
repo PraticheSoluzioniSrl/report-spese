@@ -13,7 +13,11 @@ export async function POST (req) {
   const fd = await req.formData()
   const name = String(fd.get('name') || '').trim()
   if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
-  await prisma.mainCategory.create({ data: { name } })
+  await prisma.mainCategory.upsert({
+    where: { name },
+    update: {},
+    create: { name }
+  })
   return NextResponse.json({ ok: true })
 }
 

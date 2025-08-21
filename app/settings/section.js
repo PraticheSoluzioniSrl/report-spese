@@ -17,9 +17,10 @@ export default function SettingsSection () {
 
   async function addMain (e) {
     e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const fd = new FormData(form)
     await fetch('/api/categories', { method: 'POST', body: fd })
-    e.currentTarget.reset()
+    form.reset()
     load()
   }
 
