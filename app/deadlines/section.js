@@ -30,6 +30,14 @@ export default function DeadlinesSection () {
     load()
   }
 
+  function addToCalendar (d) {
+    const text = encodeURIComponent(d.description)
+    const ymd = String(d.dueDate).slice(0, 10).replace(/-/g, '')
+    const details = encodeURIComponent(`Importo: € ${Number(d.amount).toFixed(2)}`)
+    const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${ymd}/${ymd}&details=${details}`
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <div className='w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-6'>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
@@ -71,6 +79,11 @@ export default function DeadlinesSection () {
                   </div>
                   <div className='flex items-center gap-4'>
                     <p className='font-semibold text-lg'>€ {Number(d.amount).toFixed(2)}</p>
+                    <button onClick={() => addToCalendar(d)} className='text-gray-400 hover:text-blue-500' title='Aggiungi a Google Calendar'>
+                      <svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' />
+                      </svg>
+                    </button>
                     <button onClick={() => remove(d.id)} className='text-gray-400 hover:text-red-500 text-2xl font-bold'>&times;</button>
                   </div>
                 </li>
