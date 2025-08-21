@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, :root {
+  height: 100%;
+}
+
+/* Usa classi Tailwind nei componenti/pagine per styling globale leggero */
+

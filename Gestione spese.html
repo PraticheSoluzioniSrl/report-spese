@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Finanziaria Familiare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-button { transition: all 0.2s ease-in-out; }
+        .tab-button.active { border-color: #3b82f6; color: #3b82f6; background-color: #eff6ff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .deadline-item.paid { text-decoration: line-through; color: #9ca3af; }
+        .deadline-item.paid .amount { color: #9ca3af; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg my-8 p-6 md:p-8">
+        
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl font-bold text-gray-900">Dashboard Finanziaria</h1>
+            <p class="text-gray-500 mt-1">Gestisci spese, scadenze e analisi in un unico posto.</p>
+        </header>
+
+        <!-- Navigazione a Schede -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="spese">Report Spese</button>
+                <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="scadenze">Scadenze</button>
+                <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="analisi">Analisi Grafica</button>
+                <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="impostazioni">Impostazioni</button>
+            </nav>
+        </div>
+
+        <!-- Contenuto delle Schede -->
+        <main>
+            <!-- Sezione Spese -->
+            <div id="tab-spese" class="tab-content active">
+                <div class="flex items-center mb-4">
+                    <label for="report-month-filter" class="mr-2 text-sm font-medium">Mostra report per il mese di:</label>
+                    <select id="report-month-filter" class="px-4 py-2 border border-gray-300 rounded-lg"></select>
+                </div>
+                <!-- Riepilogo Spese -->
+                <div id="summary-section" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center"></div>
+                <!-- Form Aggiungi Spesa -->
+                <div class="mb-8 p-6 bg-gray-50 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-4">Aggiungi una nuova spesa</h3>
+                    <form id="expense-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end"></form>
+                </div>
+                <!-- Lista Spese -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 border-b pb-2">Dettaglio Spese del Mese</h3>
+                    <ul id="expense-list" class="space-y-3"></ul>
+                </div>
+            </div>
+
+            <!-- Sezione Scadenze -->
+            <div id="tab-scadenze" class="tab-content">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Aggiungi Scadenza</h3>
+                        <form id="deadline-form" class="space-y-4 p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <label for="deadline-description" class="block text-sm font-medium text-gray-600 mb-1">Descrizione</label>
+                                <input type="text" id="deadline-description" placeholder="Es. Bolletta Elettrica" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="deadline-amount" class="block text-sm font-medium text-gray-600 mb-1">Importo (€)</label>
+                                    <input type="number" id="deadline-amount" placeholder="75.50" step="0.01" min="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                                </div>
+                                <div>
+                                    <label for="deadline-date" class="block text-sm font-medium text-gray-600 mb-1">Data Scadenza</label>
+                                    <input type="date" id="deadline-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700">Aggiungi Scadenza</button>
+                        </form>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Elenco Scadenze</h3>
+                        <ul id="deadline-list" class="space-y-3"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sezione Analisi -->
+            <div id="tab-analisi" class="tab-content">
+                <div class="flex items-center mb-4">
+                    <label for="chart-month-filter" class="mr-2 text-sm font-medium">Analisi per il mese di:</label>
+                    <select id="chart-month-filter" class="px-4 py-2 border border-gray-300 rounded-lg"></select>
+                </div>
+                <div class="w-full max-w-2xl mx-auto">
+                    <canvas id="expense-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Sezione Impostazioni -->
+            <div id="tab-impostazioni" class="tab-content">
+                <h3 class="text-xl font-semibold mb-4 border-b pb-2">Gestione Categorie</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="font-semibold mb-2">Categorie Principali</h4>
+                        <form id="add-main-category-form" class="flex gap-2 mb-4">
+                            <input type="text" id="new-main-category" placeholder="Nuova categoria" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Aggiungi</button>
+                        </form>
+                        <ul id="main-category-list" class="space-y-2"></ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">Sottocategorie</h4>
+                        <form id="add-subcategory-form" class="space-y-2 mb-4">
+                            <select id="main-category-for-sub" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></select>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-subcategory" placeholder="Nuova sottocategoria" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Aggiungi</button>
+                            </div>
+                        </form>
+                        <div id="subcategory-list-container"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let state = {
+                expenses: [],
+                deadlines: [],
+                categories: {
+                    "Fisse": ["Affitto/Mutuo", "Bollette", "Tasse", "Abbonamenti"],
+                    "Variabili": ["Supermercato", "Trasporti", "Salute", "Casa"],
+                    "Occasionali": ["Ristoranti", "Shopping", "Hobby", "Regali"]
+                }
+            };
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            function saveData() {
+                localStorage.setItem('financialDashboardState', JSON.stringify(state));
+            }
+
+            function loadData() {
+                const savedState = localStorage.getItem('financialDashboardState');
+                if (savedState) {
+                    state = JSON.parse(savedState);
+                }
+            }
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => { t.classList.remove('active'); t.style.borderColor = 'transparent'; });
+                    tab.classList.add('active');
+                    tab.style.borderColor = '#3b82f6';
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+                    
+                    if (tab.dataset.tab === 'spese') renderExpenseSection();
+                    if (tab.dataset.tab === 'analisi') renderAnalysis();
+                    if (tab.dataset.tab === 'impostazioni') renderSettings();
+                });
+            });
+
+            function renderAll() {
+                renderExpenseSection();
+                renderDeadlines();
+                renderAnalysis();
+                renderSettings();
+            }
+
+            function getUniqueMonths() {
+                return [...new Set(state.expenses.map(e => e.date.substring(0, 7)))].sort().reverse();
+            }
+
+            function populateMonthFilter(selectElementId) {
+                const selectElement = document.getElementById(selectElementId);
+                const uniqueMonths = getUniqueMonths();
+                
+                const currentVal = selectElement.value;
+                selectElement.innerHTML = uniqueMonths.map(m => `<option value="${m}">${new Date(m + '-02').toLocaleString('it-IT', { month: 'long', year: 'numeric' })}</option>`).join('');
+                if (uniqueMonths.length === 0) {
+                    selectElement.innerHTML = '<option value="">Nessun dato</option>';
+                } else if (currentVal && uniqueMonths.includes(currentVal)) {
+                    selectElement.value = currentVal;
+                }
+            }
+
+            function renderExpenseSection() {
+                populateMonthFilter('report-month-filter');
+                const monthFilter = document.getElementById('report-month-filter');
+                const selectedMonth = monthFilter.value;
+                
+                const monthlyExpenses = selectedMonth ? state.expenses.filter(e => e.date.startsWith(selectedMonth)) : [];
+
+                const summarySection = document.getElementById('summary-section');
+                const expenseForm = document.getElementById('expense-form');
+                const expenseList = document.getElementById('expense-list');
+
+                let summaryHTML = '';
+                const totals = {};
+                for (const cat in state.categories) {
+                    totals[cat] = monthlyExpenses
+                        .filter(e => e.mainCategory === cat)
+                        .reduce((sum, e) => sum + e.amount, 0);
+                    summaryHTML += `
+                        <div class="bg-gray-100 rounded-xl p-4 shadow">
+                            <h2 class="text-md font-medium text-gray-600">${cat}</h2>
+                            <p class="text-2xl font-bold mt-1">€ ${totals[cat].toFixed(2)}</p>
+                        </div>`;
+                }
+                const grandTotal = Object.values(totals).reduce((sum, v) => sum + v, 0);
+                summarySection.innerHTML = summaryHTML;
+                summarySection.innerHTML += `
+                    <div class="md:col-span-3 bg-gray-700 text-white rounded-xl p-5 shadow-lg mt-2">
+                        <h2 class="text-lg font-medium opacity-80">Spesa Totale del Mese</h2>
+                        <p class="text-4xl font-bold mt-2">€ ${grandTotal.toFixed(2)}</p>
+                    </div>`;
+
+                expenseForm.innerHTML = `
+                    <div class="md:col-span-3">
+                        <label for="description" class="block text-sm font-medium text-gray-600 mb-1">Descrizione</label>
+                        <input type="text" id="description" placeholder="Es. Spesa al supermercato" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label for="amount" class="block text-sm font-medium text-gray-600 mb-1">Importo (€)</label>
+                        <input type="number" id="amount" placeholder="25.50" step="0.01" min="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label for="main-category" class="block text-sm font-medium text-gray-600 mb-1">Categoria</label>
+                        <select id="main-category" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></select>
+                    </div>
+                    <div>
+                        <label for="subcategory" class="block text-sm font-medium text-gray-600 mb-1">Sottocategoria</label>
+                        <select id="subcategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></select>
+                    </div>
+                    <div class="md:col-span-3">
+                         <label for="expense-date" class="block text-sm font-medium text-gray-600 mb-1">Data</label>
+                         <input type="date" id="expense-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                    </div>
+                    <button type="submit" class="md:col-span-3 w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 mt-2">Aggiungi Spesa</button>`;
+                
+                const mainCategorySelect = document.getElementById('main-category');
+                const subcategorySelect = document.getElementById('subcategory');
+                
+                mainCategorySelect.innerHTML = Object.keys(state.categories).map(c => `<option value="${c}">${c}</option>`).join('');
+                
+                function updateSubcategories() {
+                    const selected = mainCategorySelect.value;
+                    subcategorySelect.innerHTML = state.categories[selected] ? state.categories[selected].map(s => `<option value="${s}">${s}</option>`).join('') : '';
+                }
+                mainCategorySelect.addEventListener('change', updateSubcategories);
+                updateSubcategories();
+                document.getElementById('expense-date').valueAsDate = new Date();
+
+                expenseList.innerHTML = '';
+                if (monthlyExpenses.length === 0) {
+                    expenseList.innerHTML = `<li class="text-center text-gray-500 py-8">Nessuna spesa registrata per questo mese.</li>`;
+                } else {
+                    [...monthlyExpenses].sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(expense => {
+                        const li = document.createElement('li');
+                        li.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-lg';
+                        li.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm text-gray-500">${new Date(expense.date).toLocaleDateString('it-IT')}</span>
+                                <div>
+                                    <p class="font-semibold">${expense.description}</p>
+                                    <p class="text-sm text-gray-500">${expense.mainCategory} > ${expense.subcategory}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <p class="font-semibold text-lg">€ ${expense.amount.toFixed(2)}</p>
+                                <button data-id="${expense.id}" class="delete-expense text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+                            </div>`;
+                        expenseList.appendChild(li);
+                    });
+                }
+            }
+            
+            document.getElementById('report-month-filter').addEventListener('change', renderExpenseSection);
+
+            document.getElementById('tab-spese').addEventListener('submit', e => {
+                if (e.target.id === 'expense-form') {
+                    e.preventDefault();
+                    const newExpense = {
+                        id: Date.now(),
+                        description: e.target.elements.description.value,
+                        amount: parseFloat(e.target.elements.amount.value),
+                        mainCategory: e.target.elements['main-category'].value,
+                        subcategory: e.target.elements.subcategory.value,
+                        date: e.target.elements['expense-date'].value,
+                    };
+                    state.expenses.push(newExpense);
+                    saveData();
+                    
+                    const newMonth = newExpense.date.substring(0, 7);
+                    populateMonthFilter('report-month-filter');
+                    document.getElementById('report-month-filter').value = newMonth;
+
+                    renderExpenseSection();
+                    e.target.reset();
+                    document.getElementById('expense-date').valueAsDate = new Date();
+                }
+            });
+
+            document.getElementById('tab-spese').addEventListener('click', e => {
+                if (e.target.classList.contains('delete-expense')) {
+                    const id = parseInt(e.target.dataset.id);
+                    state.expenses = state.expenses.filter(ex => ex.id !== id);
+                    saveData();
+                    renderExpenseSection();
+                }
+            });
+
+            function renderDeadlines() {
+                const deadlineList = document.getElementById('deadline-list');
+                deadlineList.innerHTML = '';
+                if (state.deadlines.length === 0) {
+                    deadlineList.innerHTML = `<li class="text-center text-gray-500 py-8">Nessuna scadenza registrata.</li>`;
+                    return;
+                }
+                [...state.deadlines].sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate)).forEach(d => {
+                    const li = document.createElement('li');
+                    const isOverdue = new Date(d.dueDate) < new Date() && !d.paid;
+                    li.className = `deadline-item flex items-center justify-between p-3 rounded-lg ${d.paid ? 'paid bg-gray-100' : 'bg-white shadow-sm'} ${isOverdue ? 'border-l-4 border-red-500' : ''}`;
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" data-id="${d.id}" class="toggle-paid h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${d.paid ? 'checked' : ''}>
+                            <div>
+                                <p class="font-semibold">${d.description}</p>
+                                <p class="text-sm">${new Date(d.dueDate).toLocaleDateString('it-IT')} ${isOverdue ? '<span class="text-red-600 font-semibold">(Scaduto)</span>' : ''}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <p class="font-semibold text-lg amount">€ ${d.amount.toFixed(2)}</p>
+                            <button data-id="${d.id}" class="sync-gcal text-gray-400 hover:text-blue-500" title="Aggiungi a Google Calendar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            </button>
+                            <button data-id="${d.id}" class="delete-deadline text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+                        </div>`;
+                    deadlineList.appendChild(li);
+                });
+            }
+
+            document.getElementById('deadline-form').addEventListener('submit', e => {
+                e.preventDefault();
+                const newDeadline = {
+                    id: Date.now(),
+                    description: e.target.elements['deadline-description'].value,
+                    amount: parseFloat(e.target.elements['deadline-amount'].value),
+                    dueDate: e.target.elements['deadline-date'].value,
+                    paid: false
+                };
+                state.deadlines.push(newDeadline);
+                saveData();
+                renderDeadlines();
+                e.target.reset();
+            });
+
+            document.getElementById('deadline-list').addEventListener('click', e => {
+                const button = e.target.closest('button, input');
+                if (!button) return;
+
+                const id = parseInt(button.dataset.id);
+                if (button.classList.contains('toggle-paid')) {
+                    const deadline = state.deadlines.find(d => d.id === id);
+                    if(deadline) deadline.paid = button.checked;
+                    saveData();
+                    renderDeadlines();
+                }
+                if (button.classList.contains('delete-deadline')) {
+                    state.deadlines = state.deadlines.filter(d => d.id !== id);
+                    saveData();
+                    renderDeadlines();
+                }
+                if (button.classList.contains('sync-gcal')) {
+                    const deadline = state.deadlines.find(d => d.id === id);
+                    if (deadline) {
+                        const text = encodeURIComponent(deadline.description);
+                        const date = deadline.dueDate.replace(/-/g, '');
+                        const details = encodeURIComponent(`Importo: € ${deadline.amount.toFixed(2)}`);
+                        const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${date}/${date}&details=${details}`;
+                        window.open(url, '_blank');
+                    }
+                }
+            });
+
+            let expenseChart = null;
+            function renderAnalysis() {
+                populateMonthFilter('chart-month-filter');
+                const monthFilter = document.getElementById('chart-month-filter');
+                const selectedMonth = monthFilter.value;
+                const filteredExpenses = selectedMonth ? state.expenses.filter(e => e.date.startsWith(selectedMonth)) : [];
+                
+                const analysisData = filteredExpenses.reduce((acc, expense) => {
+                    const subcat = expense.subcategory;
+                    if (!acc[subcat]) {
+                        acc[subcat] = 0;
+                    }
+                    acc[subcat] += expense.amount;
+                    return acc;
+                }, {});
+
+                const sortedLabels = Object.keys(analysisData).sort();
+                const sortedData = sortedLabels.map(label => analysisData[label]);
+
+                const chartColors = ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#8b5cf6', '#14b8a6', '#6366f1', '#d946ef', '#f59e0b', '#10b981', '#0ea5e9', '#ec4899'];
+
+                const ctx = document.getElementById('expense-chart').getContext('2d');
+                if (expenseChart) expenseChart.destroy();
+                
+                expenseChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: sortedLabels,
+                        datasets: [{
+                            label: 'Spese del mese',
+                            data: sortedData,
+                            backgroundColor: chartColors,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: { display: true, text: `Ripartizione Spese per Sottocategoria - ${selectedMonth ? new Date(selectedMonth + '-02').toLocaleString('it-IT', { month: 'long', year: 'numeric' }) : 'Nessun Mese'}` }
+                        }
+                    }
+                });
+            }
+            document.getElementById('chart-month-filter').addEventListener('change', renderAnalysis);
+
+            function renderSettings() {
+                const mainCategoryList = document.getElementById('main-category-list');
+                const mainCategoryForSub = document.getElementById('main-category-for-sub');
+                const subcategoryContainer = document.getElementById('subcategory-list-container');
+                
+                mainCategoryList.innerHTML = Object.keys(state.categories).map(cat => `
+                    <li class="flex justify-between items-center p-2 bg-gray-100 rounded">
+                        <span>${cat}</span>
+                        <button data-cat="${cat}" class="delete-main-cat text-red-500 hover:text-red-700 text-xl font-bold">&times;</button>
+                    </li>`).join('');
+
+                mainCategoryForSub.innerHTML = Object.keys(state.categories).map(cat => `<option value="${cat}">${cat}</option>`).join('');
+                
+                function renderSubcategoriesForSelected() {
+                    const selected = mainCategoryForSub.value;
+                    if (!selected || !state.categories[selected]) {
+                        subcategoryContainer.innerHTML = '';
+                        return;
+                    }
+                    subcategoryContainer.innerHTML = `
+                        <ul class="space-y-2">
+                            ${state.categories[selected].map(sub => `
+                                <li class="flex justify-between items-center p-2 bg-gray-100 rounded">
+                                    <span>${sub}</span>
+                                    <button data-maincat="${selected}" data-subcat="${sub}" class="delete-sub-cat text-red-500 hover:text-red-700 text-xl font-bold">&times;</button>
+                                </li>`).join('')}
+                        </ul>`;
+                }
+                mainCategoryForSub.addEventListener('change', renderSubcategoriesForSelected);
+                renderSubcategoriesForSelected();
+            }
+            
+            document.getElementById('add-main-category-form').addEventListener('submit', e => {
+                e.preventDefault();
+                const newCat = e.target.elements['new-main-category'].value.trim();
+                if (newCat && !state.categories[newCat]) {
+                    state.categories[newCat] = [];
+                    // Sort main categories
+                    state.categories = Object.fromEntries(Object.entries(state.categories).sort((a, b) => a[0].localeCompare(b[0])));
+                    saveData();
+                    renderAll();
+                }
+                e.target.reset();
+            });
+            
+            document.getElementById('add-subcategory-form').addEventListener('submit', e => {
+                e.preventDefault();
+                const mainCat = e.target.elements['main-category-for-sub'].value;
+                const newSub = e.target.elements['new-subcategory'].value.trim();
+                if (mainCat && newSub && !state.categories[mainCat].includes(newSub)) {
+                    state.categories[mainCat].push(newSub);
+                    // Sort subcategories
+                    state.categories[mainCat].sort((a, b) => a.localeCompare(b));
+                    saveData();
+                    renderAll();
+                }
+                e.target.elements['new-subcategory'].value = '';
+            });
+
+            document.getElementById('impostazioni').addEventListener('click', e => {
+                if (e.target.classList.contains('delete-main-cat')) {
+                    const catToDelete = e.target.dataset.cat;
+                    if (state.expenses.some(ex => ex.mainCategory === catToDelete)) {
+                        alert('Impossibile eliminare la categoria: esistono spese associate.');
+                        return;
+                    }
+                    delete state.categories[catToDelete];
+                    saveData();
+                    renderAll();
+                }
+                if (e.target.classList.contains('delete-sub-cat')) {
+                    const mainCat = e.target.dataset.maincat;
+                    const subToDelete = e.target.dataset.subcat;
+                    if (state.expenses.some(ex => ex.subcategory === subToDelete && ex.mainCategory === mainCat)) {
+                         alert('Impossibile eliminare la sottocategoria: esistono spese associate.');
+                        return;
+                    }
+                    state.categories[mainCat] = state.categories[mainCat].filter(s => s !== subToDelete);
+                    saveData();
+                    renderAll();
+                }
+            });
+
+            loadData();
+            renderAll();
+        });
+    </script>
+</body>
+</html>
