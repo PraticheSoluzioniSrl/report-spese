@@ -132,7 +132,7 @@ export default function ExpensesSection () {
                   <span className='text-sm text-gray-500'>{new Date(e.date).toLocaleDateString('it-IT')}</span>
                   <div>
                     <p className='font-semibold'>{e.description}</p>
-                    <p className='text-sm text-gray-500'>{e.mainCategory.name} > {e.subcategory.name}</p>
+                    <p className='text-sm text-gray-500'>{e.mainCategory.name} {'>'} {e.subcategory.name}</p>
                   </div>
                 </div>
                 <div className='flex items-center gap-4'>
