@@ -1,15 +1,20 @@
 import NavBar from '../../components/NavBar'
 import { logoutAction } from '../../lib/actions'
-import AnalysisSection from './section'
+import IncomesSection from './section'
 
-export default function AnalysisPage () {
+export const dynamic = 'force-dynamic'
+
+export default function IncomesPage () {
   return (
     <div>
       <NavBar logout={logoutAction} />
       <div className='w-full max-w-5xl mx-auto'>
-        <AnalysisSection />
+        <IncomesSection />
       </div>
     </div>
   )
 }
+
+
+
 

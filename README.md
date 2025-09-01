@@ -22,5 +22,10 @@ Deploy su Vercel
 - Post-deploy esegui: `npx prisma db push` (una tantum) e poi `npm run db:seed` se vuoi le categorie base
 
 Accesso
-- Password statica: `C0S1M0`
+- Primo accesso: utente bootstrap (admin) con password `C0S1M0`. Cambia la password da Impostazioni.
+
+Novità
+- Entrate: pagina dedicata per registrare e consultare le entrate mensili
+- Import massivo: carica Excel/CSV di spese o entrate (colonne: description, amount, date YYYY-MM-DD, mainCategory, subcategory)
+- Cambio password: nella pagina Impostazioni
 

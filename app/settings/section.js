@@ -1,9 +1,13 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { changePasswordAction } from '../../lib/actions'
 
 export default function SettingsSection () {
   const [categories, setCategories] = useState([])
   const [selected, setSelected] = useState('')
+  const sp = useSearchParams()
 
   async function load () {
     const data = await fetch('/api/categories').then(r => r.json())
@@ -45,6 +49,24 @@ export default function SettingsSection () {
   return (
     <div className='w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-6'>
       <h3 className='text-xl font-semibold mb-4 border-b pb-2'>Gestione Categorie</h3>
+      <div className='mb-8 p-4 bg-gray-50 rounded-lg'>
+        <h4 className='font-semibold mb-2'>Cambio Password</h4>
+        <form action={changePasswordAction} className='grid grid-cols-1 md:grid-cols-3 gap-4 items-end'>
+          <div>
+            <label className='block text-sm font-medium text-gray-600 mb-1'>Password attuale</label>
+            <input name='current' type='password' className='w-full px-4 py-2 border rounded-lg' required />
+          </div>
+          <div>
+            <label className='block text-sm font-medium text-gray-600 mb-1'>Nuova password</label>
+            <input name='next' type='password' className='w-full px-4 py-2 border rounded-lg' required />
+          </div>
+          <button className='bg-blue-600 text-white px-4 py-2 rounded-lg'>Aggiorna</button>
+        </form>
+        {sp.get('pwd') === 'ok' && <p className='text-green-700 text-sm mt-2'>Password aggiornata con successo.</p>}
+        {sp.get('pwd') === 'wrong' && <p className='text-red-600 text-sm mt-2'>Password attuale errata.</p>}
+        {sp.get('pwd') === 'weak' && <p className='text-red-600 text-sm mt-2'>La nuova password deve avere almeno 6 caratteri.</p>}
+        {sp.get('pwd') === 'error' && <p className='text-red-600 text-sm mt-2'>Errore aggiornamento password.</p>}
+      </div>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
         <div>
           <h4 className='font-semibold mb-2'>Categorie Principali</h4>

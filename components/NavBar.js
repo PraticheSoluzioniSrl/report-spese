@@ -6,8 +6,10 @@ export default function NavBar ({ logout }) {
   const pathname = usePathname()
   const tabs = [
     { href: '/expenses', label: 'Report Spese' },
+    { href: '/incomes', label: 'Entrate' },
     { href: '/deadlines', label: 'Scadenze' },
     { href: '/analysis', label: 'Analisi Grafica' },
+    { href: '/import', label: 'Import' },
     { href: '/settings', label: 'Impostazioni' }
   ]
 

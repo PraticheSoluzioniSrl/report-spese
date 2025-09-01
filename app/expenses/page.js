@@ -1,5 +1,5 @@
 import NavBar from '../../components/NavBar'
-import { logoutAction } from '../../lib/auth'
+import { logoutAction } from '../../lib/actions'
 import ExpensesSection from './section'
 
 export const dynamic = 'force-dynamic'
