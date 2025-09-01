@@ -20,6 +20,16 @@ export default function ExpensesSection () {
     fetch(`/api/expenses?month=${selectedMonth}`).then(r => r.json()).then(setExpenses)
   }, [selectedMonth])
 
+  // Imposta la data corrente nel form quando viene caricato
+  useEffect(() => {
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+    const dateInput = document.querySelector('input[name="date"]')
+    if (dateInput) {
+      dateInput.value = todayStr
+    }
+  }, [])
+
   const totalsByMain = useMemo(() => {
     const totals = {}
     for (const cat of categories) totals[cat.name] = 0
@@ -35,10 +45,36 @@ export default function ExpensesSection () {
     e.preventDefault()
     const form = e.currentTarget
     const formData = new FormData(form)
-    await fetch('/api/expenses', { method: 'POST', body: formData })
-    form.reset()
-    const m = formData.get('date').toString().slice(0, 7)
-    await refreshMonths(m)
+    
+    try {
+      const response = await fetch('/api/expenses', { method: 'POST', body: formData })
+      if (!response.ok) {
+        const error = await response.json()
+        alert(`Errore nell'inserimento: ${error.error || 'Errore sconosciuto'}`)
+        return
+      }
+      
+      form.reset()
+      // Reimposta la data corrente dopo il reset
+      const today = new Date()
+      const todayStr = today.toISOString().split('T')[0]
+      const dateInput = form.querySelector('input[name="date"]')
+      if (dateInput) {
+        dateInput.value = todayStr
+      }
+      
+      const m = formData.get('date').toString().slice(0, 7)
+      await refreshMonths(m)
+      
+      // Ricarica le spese per il mese selezionato
+      if (selectedMonth) {
+        const updatedExpenses = await fetch(`/api/expenses?month=${selectedMonth}`).then(r => r.json())
+        setExpenses(updatedExpenses)
+      }
+    } catch (error) {
+      console.error('Errore durante l\'inserimento:', error)
+      alert('Errore durante l\'inserimento della spesa')
+    }
   }
 
   async function refreshMonths (newMonth) {
@@ -49,9 +85,19 @@ export default function ExpensesSection () {
   }
 
   async function deleteExpense (id) {
-    await fetch(`/api/expenses/${id}`, { method: 'DELETE' })
-    setExpenses(prev => prev.filter(e => e.id !== id))
-    await refreshMonths(selectedMonth)
+    try {
+      const response = await fetch(`/api/expenses/${id}`, { method: 'DELETE' })
+      if (!response.ok) {
+        alert('Errore durante l\'eliminazione della spesa')
+        return
+      }
+      
+      setExpenses(prev => prev.filter(e => e.id !== id))
+      await refreshMonths(selectedMonth)
+    } catch (error) {
+      console.error('Errore durante l\'eliminazione:', error)
+      alert('Errore durante l\'eliminazione della spesa')
+    }
   }
 
   const flatSubcats = useMemo(() => {
@@ -109,6 +155,7 @@ export default function ExpensesSection () {
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Sottocategoria</label>
             <select name='subcategoryName' className='w-full px-4 py-2 border rounded-lg'>
+              <option value=''>Seleziona sottocategoria</option>
               {subcatsForSelected?.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
