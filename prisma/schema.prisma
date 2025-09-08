@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model MainCategory {
@@ -29,7 +29,7 @@ model Subcategory {
 model Expense {
   id             Int          @id @default(autoincrement())
   description    String
-  amount         Decimal      @db.Decimal(10,2)
+  amount         Float
   date           DateTime
   createdAt      DateTime     @default(now())
   mainCategory   MainCategory @relation(fields: [mainCategoryId], references: [id])
@@ -41,7 +41,7 @@ model Expense {
 model Deadline {
   id        Int      @id @default(autoincrement())
   description String
-  amount    Decimal  @db.Decimal(10,2)
+  amount    Float
   dueDate   DateTime
   paid      Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -50,7 +50,7 @@ model Deadline {
 model Income {
   id             Int          @id @default(autoincrement())
   description    String
-  amount         Decimal      @db.Decimal(10,2)
+  amount         Float
   date           DateTime
   createdAt      DateTime     @default(now())
   mainCategory   MainCategory @relation(fields: [mainCategoryId], references: [id])

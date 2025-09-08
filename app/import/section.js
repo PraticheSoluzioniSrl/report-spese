@@ -12,11 +12,28 @@ export default function ImportSection () {
     setCreated(null)
     const fd = new FormData(e.currentTarget)
     fd.set('type', type)
-    const res = await fetch('/api/import', { method: 'POST', body: fd })
-    const json = await res.json()
-    setCreated(json.created || 0)
-    setLoading(false)
-    e.currentTarget.reset()
+    
+    try {
+      const res = await fetch('/api/import', { method: 'POST', body: fd })
+      const json = await res.json()
+      
+      if (!res.ok) {
+        alert(`Errore durante l'import: ${json.error || 'Errore sconosciuto'}`)
+        return
+      }
+      
+      setCreated(json.created || 0)
+      
+      // Reset del form solo se esiste
+      if (e.currentTarget) {
+        e.currentTarget.reset()
+      }
+    } catch (error) {
+      console.error('Errore durante l\'import:', error)
+      alert('Errore durante l\'importazione del file')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
