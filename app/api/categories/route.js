@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../lib/prisma'
-import { initializeDatabase } from '../../../lib/init-db'
 
 export async function GET () {
-  await initializeDatabase()
   const cats = await prisma.mainCategory.findMany({
     orderBy: { name: 'asc' },
     include: { subcategories: { orderBy: { name: 'asc' } } }
