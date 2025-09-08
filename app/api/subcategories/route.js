@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMainCategories, getSubcategories, createSubcategory, deleteSubcategory, getExpenses } from '../../../lib/firebase-db'
+import { getMainCategories, getSubcategories, createSubcategory, deleteSubcategory, getExpenses } from '../../../lib/supabase-db'
 
 export async function POST (req) {
   try {

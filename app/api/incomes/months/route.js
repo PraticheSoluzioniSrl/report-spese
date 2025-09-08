@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getIncomes } from '../../../../lib/firebase-db'
+import { getIncomes } from '../../../../lib/supabase-db'
 
 export async function GET () {
   try {

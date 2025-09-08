@@ -6,7 +6,7 @@ import {
   createSubcategory, 
   createExpense, 
   createIncome 
-} from '../../../lib/firebase-db'
+} from '../../../lib/supabase-db'
 import * as XLSX from 'xlsx'
 
 export const runtime = 'nodejs'

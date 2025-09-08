@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMainCategories, deleteMainCategory, getExpenses } from '../../../../lib/firebase-db'
+import { getMainCategories, deleteMainCategory, getExpenses } from '../../../../lib/supabase-db'
 
 export async function DELETE (_req, { params }) {
   try {

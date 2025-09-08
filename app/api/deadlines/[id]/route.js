@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { updateDeadline, deleteDeadline } from '../../../../lib/firebase-db'
+import { updateDeadline, deleteDeadline } from '../../../../lib/supabase-db'
 
 export async function PATCH (req, { params }) {
   try {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getDeadlines, createDeadline } from '../../../lib/firebase-db'
+import { getDeadlines, createDeadline } from '../../../lib/supabase-db'
 
 export async function GET () {
   try {

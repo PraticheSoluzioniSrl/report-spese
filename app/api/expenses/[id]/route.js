@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { deleteExpense } from '../../../../lib/firebase-db'
+import { deleteExpense } from '../../../../lib/supabase-db'
 
 export async function DELETE (_req, { params }) {
   try {

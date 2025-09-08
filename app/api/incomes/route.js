@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getIncomes, createIncome, getMainCategories, getSubcategories } from '../../../lib/firebase-db'
+import { getIncomes, createIncome, getMainCategories, getSubcategories } from '../../../lib/supabase-db'
 
 export async function GET (req) {
   try {

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getMainCategories, createMainCategory, getSubcategories } from '../../../lib/firebase-db'
+import { getMainCategories, createMainCategory, getSubcategories } from '../../../lib/supabase-db'
 
 export async function GET () {
   try {
     const categories = await getMainCategories()
     const result = []
-    
+
     for (const cat of categories) {
       const subcategories = await getSubcategories(cat.id)
       result.push({
@@ -14,10 +14,25 @@ export async function GET () {
         subcategories: subcategories.map(s => s.name)
       })
     }
-    
+
     return NextResponse.json(result)
   } catch (error) {
     console.error('Errore nel recupero delle categorie:', error)
+    // Se Firebase non è configurato, restituisci categorie demo
+    if (error.message && error.message.includes('Firebase non configurato')) {
+      return NextResponse.json([
+        {
+          id: 'demo-1',
+          name: 'Alimentari',
+          subcategories: ['Supermercato', 'Ristorante']
+        },
+        {
+          id: 'demo-2', 
+          name: 'Trasporti',
+          subcategories: ['Benzina', 'Autobus']
+        }
+      ])
+    }
     return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
   }
 }
