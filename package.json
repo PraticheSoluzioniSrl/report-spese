@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "echo 'no lint configured'"
+    "lint": "echo 'no lint configured'",
+    "init-db": "node scripts/init-db.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.2",
