@@ -5,19 +5,29 @@ import { useSearchParams } from 'next/navigation'
 import { changePasswordAction } from '../../lib/actions'
 
 export default function SettingsSection () {
-  const [categories, setCategories] = useState([])
-  const [selected, setSelected] = useState('')
+  const [expenseCategories, setExpenseCategories] = useState([])
+  const [incomeCategories, setIncomeCategories] = useState([])
+  const [selectedExpense, setSelectedExpense] = useState('')
+  const [selectedIncome, setSelectedIncome] = useState('')
+  const [activeTab, setActiveTab] = useState('expenses') // 'expenses' | 'incomes'
   const sp = useSearchParams()
 
   async function load () {
-    const data = await fetch('/api/categories').then(r => r.json())
-    setCategories(data)
-    if (data.length && !selected) setSelected(data[0].name)
+    const [expenseData, incomeData] = await Promise.all([
+      fetch('/api/categories?type=expenses').then(r => r.json()),
+      fetch('/api/categories?type=incomes').then(r => r.json())
+    ])
+    setExpenseCategories(expenseData)
+    setIncomeCategories(incomeData)
+    if (expenseData.length && !selectedExpense) setSelectedExpense(expenseData[0].name)
+    if (incomeData.length && !selectedIncome) setSelectedIncome(incomeData[0].name)
   }
 
   useEffect(() => { load() }, [])
 
-  const subcats = useMemo(() => categories.find(c => c.name === selected)?.subcategories || [], [categories, selected])
+  const currentCategories = activeTab === 'expenses' ? expenseCategories : incomeCategories
+  const selectedCategory = activeTab === 'expenses' ? selectedExpense : selectedIncome
+  const subcats = useMemo(() => currentCategories.find(c => c.name === selectedCategory)?.subcategories || [], [currentCategories, selectedCategory])
 
   async function addMain (e) {
     e.preventDefault()
@@ -67,15 +77,43 @@ export default function SettingsSection () {
         {sp.get('pwd') === 'weak' && <p className='text-red-600 text-sm mt-2'>La nuova password deve avere almeno 6 caratteri.</p>}
         {sp.get('pwd') === 'error' && <p className='text-red-600 text-sm mt-2'>Errore aggiornamento password.</p>}
       </div>
+      {/* Toggle per switchare tra categorie entrate e uscite */}
+      <div className='mb-6'>
+        <div className='flex bg-gray-100 rounded-lg p-1 w-fit'>
+          <button
+            onClick={() => setActiveTab('expenses')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'expenses' 
+                ? 'bg-red-500 text-white' 
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Categorie Uscite
+          </button>
+          <button
+            onClick={() => setActiveTab('incomes')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'incomes' 
+                ? 'bg-green-500 text-white' 
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Categorie Entrate
+          </button>
+        </div>
+      </div>
+
       <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
         <div>
-          <h4 className='font-semibold mb-2'>Categorie Principali</h4>
+          <h4 className='font-semibold mb-2'>
+            Categorie Principali - {activeTab === 'expenses' ? 'Uscite' : 'Entrate'}
+          </h4>
           <form onSubmit={addMain} className='flex gap-2 mb-4'>
             <input name='name' type='text' placeholder='Nuova categoria' className='w-full px-4 py-2 border rounded-lg' required />
             <button className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600'>Aggiungi</button>
           </form>
           <ul className='space-y-2'>
-            {categories.map(c => (
+            {currentCategories.map(c => (
               <li key={c.name} className='flex justify-between items-center p-2 bg-gray-100 rounded'>
                 <span>{c.name}</span>
                 <button onClick={() => deleteMain(c.name)} className='text-red-500 hover:text-red-700 text-xl font-bold'>&times;</button>
@@ -86,8 +124,19 @@ export default function SettingsSection () {
         <div>
           <h4 className='font-semibold mb-2'>Sottocategorie</h4>
           <form onSubmit={addSub} className='space-y-2 mb-4'>
-            <select name='mainName' value={selected} onChange={e => setSelected(e.target.value)} className='w-full px-4 py-2 border rounded-lg'>
-              {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+            <select 
+              name='mainName' 
+              value={selectedCategory} 
+              onChange={e => {
+                if (activeTab === 'expenses') {
+                  setSelectedExpense(e.target.value)
+                } else {
+                  setSelectedIncome(e.target.value)
+                }
+              }} 
+              className='w-full px-4 py-2 border rounded-lg'
+            >
+              {currentCategories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
             </select>
             <div className='flex gap-2'>
               <input name='subName' type='text' placeholder='Nuova sottocategoria' className='w-full px-4 py-2 border rounded-lg' required />
@@ -98,7 +147,7 @@ export default function SettingsSection () {
             {subcats.map(s => (
               <li key={s} className='flex justify-between items-center p-2 bg-gray-100 rounded'>
                 <span>{s}</span>
-                <button onClick={() => deleteSub(selected, s)} className='text-red-500 hover:text-red-700 text-xl font-bold'>&times;</button>
+                <button onClick={() => deleteSub(selectedCategory, s)} className='text-red-500 hover:text-red-700 text-xl font-bold'>&times;</button>
               </li>
             ))}
           </ul>

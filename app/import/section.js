@@ -13,24 +13,36 @@ export default function ImportSection () {
     const fd = new FormData(e.currentTarget)
     fd.set('type', type)
     
+    console.log('📤 Avvio import CSV - Tipo:', type)
+    
     try {
       const res = await fetch('/api/import', { method: 'POST', body: fd })
       const json = await res.json()
       
+      console.log('📥 Risposta import:', json)
+      
       if (!res.ok) {
-        alert(`Errore durante l'import: ${json.error || 'Errore sconosciuto'}`)
+        console.error('❌ Errore import:', json)
+        alert(`Errore durante l'import: ${json.error || 'Errore sconosciuto'}\nDettagli: ${json.details || 'Nessun dettaglio disponibile'}`)
         return
       }
       
       setCreated(json.created || 0)
+      
+      if (json.errors && json.errors.length > 0) {
+        console.warn('⚠️ Errori durante import:', json.errors)
+        alert(`Import completato con ${json.created} record creati, ma ci sono stati ${json.errors.length} errori. Controlla la console per i dettagli.`)
+      } else {
+        alert(`Import completato con successo: ${json.created} record creati!`)
+      }
       
       // Reset del form solo se esiste
       if (e.currentTarget) {
         e.currentTarget.reset()
       }
     } catch (error) {
-      console.error('Errore durante l\'import:', error)
-      alert('Errore durante l\'importazione del file')
+      console.error('❌ Errore durante l\'import:', error)
+      alert(`Errore durante l'importazione del file: ${error.message}`)
     } finally {
       setLoading(false)
     }
