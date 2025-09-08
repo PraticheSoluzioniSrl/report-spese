@@ -15,6 +15,16 @@ export default function IncomesSection () {
     fetch('/api/categories?type=incomes').then(r => r.json()).then(setCategories)
   }, [])
 
+  // Imposta la data corrente nel form quando viene caricato
+  useEffect(() => {
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+    const dateInput = document.querySelector('input[name="date"]')
+    if (dateInput) {
+      dateInput.value = todayStr
+    }
+  }, [])
+
   useEffect(() => {
     if (!selectedMonth) { setIncomes([]); return }
     fetch(`/api/incomes?month=${selectedMonth}`).then(r => r.json()).then(setIncomes)
@@ -117,6 +127,26 @@ export default function IncomesSection () {
             <input name='date' type='date' className='w-full px-4 py-2 border rounded-lg' required />
           </div>
           <button className='md:col-span-3 w-full bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-700 mt-2'>Aggiungi Entrata</button>
+        </form>
+      </div>
+
+      <div className='mb-8 p-6 bg-blue-50 rounded-lg'>
+        <h3 className='text-xl font-semibold mb-4'>Gestione Categorie Entrate</h3>
+        <form onSubmit={async (e) => {
+          e.preventDefault()
+          const form = e.currentTarget
+          const formData = new FormData(form)
+          await fetch('/api/categories', { method: 'POST', body: formData })
+          form.reset()
+          // Ricarica le categorie
+          const updatedCategories = await fetch('/api/categories?type=incomes').then(r => r.json())
+          setCategories(updatedCategories)
+        }} className='grid grid-cols-1 md:grid-cols-2 gap-4 items-end'>
+          <div>
+            <label className='block text-sm font-medium text-gray-600 mb-1'>Nuova Categoria</label>
+            <input name='name' type='text' placeholder='Es. Investimenti' className='w-full px-4 py-2 border rounded-lg' required />
+          </div>
+          <button type='submit' className='bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700'>Aggiungi Categoria</button>
         </form>
       </div>
 

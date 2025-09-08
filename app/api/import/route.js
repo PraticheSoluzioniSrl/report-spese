@@ -16,14 +16,24 @@ export async function POST (req) {
     const fd = await req.formData()
     const file = fd.get('file')
     const type = String(fd.get('type') || 'expense') // 'expense' | 'income'
-    if (!file || typeof file === 'string') return NextResponse.json({ error: 'file required' }, { status: 400 })
+    
+    console.log('📊 Import CSV - Inizio')
+    console.log('📊 File ricevuto:', file?.name, 'Tipo:', type)
+    
+    if (!file || typeof file === 'string') {
+      console.log('❌ File mancante o non valido')
+      return NextResponse.json({ error: 'file required' }, { status: 400 })
+    }
 
     const arrayBuffer = await file.arrayBuffer()
+    console.log('📊 ArrayBuffer size:', arrayBuffer.byteLength)
+    
     const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
     const sheetName = workbook.SheetNames[0]
     const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' })
 
     console.log('📊 Import CSV - Tipo:', type, 'Righe:', json.length)
+    console.log('📊 Prime righe:', json.slice(0, 3))
 
     // Expected headers: description, amount, date(YYYY-MM-DD), mainCategory, subcategory
     let created = 0
