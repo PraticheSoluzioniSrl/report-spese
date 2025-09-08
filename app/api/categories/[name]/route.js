@@ -1,12 +1,24 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/prisma'
+import { getMainCategories, deleteMainCategory, getExpenses } from '../../../../lib/firebase-db'
 
 export async function DELETE (_req, { params }) {
-  const name = decodeURIComponent(params.name)
-  const cat = await prisma.mainCategory.findUnique({ where: { name }, include: { expenses: true } })
-  if (!cat) return NextResponse.json({ ok: true })
-  if (cat.expenses.length > 0) return NextResponse.json({ error: 'Categoria usata da spese' }, { status: 400 })
-  await prisma.mainCategory.delete({ where: { id: cat.id } })
-  return NextResponse.json({ ok: true })
+  try {
+    const name = decodeURIComponent(params.name)
+    
+    const mainCategories = await getMainCategories()
+    const cat = mainCategories.find(category => category.name === name)
+    if (!cat) return NextResponse.json({ ok: true })
+    
+    // Controlla se la categoria è usata in qualche spesa
+    const expenses = await getExpenses()
+    const isUsed = expenses.some(expense => expense.mainCategoryId === cat.id)
+    if (isUsed) return NextResponse.json({ error: 'Categoria usata da spese' }, { status: 400 })
+    
+    await deleteMainCategory(cat.id)
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('Errore durante l\'eliminazione della categoria:', error)
+    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
+  }
 }
 

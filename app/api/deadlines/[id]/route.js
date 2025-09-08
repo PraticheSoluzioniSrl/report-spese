@@ -1,16 +1,26 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/prisma'
+import { updateDeadline, deleteDeadline } from '../../../../lib/firebase-db'
 
 export async function PATCH (req, { params }) {
-  const id = Number(params.id)
-  const body = await req.json()
-  await prisma.deadline.update({ where: { id }, data: { paid: Boolean(body.paid) } })
-  return NextResponse.json({ ok: true })
+  try {
+    const id = String(params.id)
+    const body = await req.json()
+    await updateDeadline(id, { paid: Boolean(body.paid) })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('Errore durante l\'aggiornamento della scadenza:', error)
+    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
+  }
 }
 
 export async function DELETE (_req, { params }) {
-  const id = Number(params.id)
-  await prisma.deadline.delete({ where: { id } })
-  return NextResponse.json({ ok: true })
+  try {
+    const id = String(params.id)
+    await deleteDeadline(id)
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('Errore durante l\'eliminazione della scadenza:', error)
+    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
+  }
 }
 
