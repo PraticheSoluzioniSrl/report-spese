@@ -1,31 +1,20 @@
 import { NextResponse } from 'next/server'
 
 export async function GET () {
-  // Genera sempre i mesi disponibili senza dipendere dal database
-  const currentDate = new Date()
+  // Genera i mesi da settembre 2025 a dicembre 2025
   const availableMonths = []
   
-  // Aggiungi il mese corrente (settembre 2024)
-  const currentMonthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
-  availableMonths.push(currentMonthStr)
+  // Aggiungi i mesi da settembre 2025 a dicembre 2025
+  const months = [
+    '2025-12', // Dicembre 2025
+    '2025-11', // Novembre 2025
+    '2025-10', // Ottobre 2025
+    '2025-09'  // Settembre 2025
+  ]
   
-  // Aggiungi i prossimi 2 mesi
-  for (let i = 1; i <= 2; i++) {
-    const nextDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1)
-    const nextMonthStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`
-    availableMonths.push(nextMonthStr)
-  }
+  availableMonths.push(...months)
   
-  // Aggiungi anche settembre 2024 specificamente se non è già presente
-  const september2024 = '2024-09'
-  if (!availableMonths.includes(september2024)) {
-    availableMonths.push(september2024)
-  }
-  
-  // Ordina i mesi in ordine decrescente
-  availableMonths.sort((a, b) => b.localeCompare(a))
-  
-  console.log('Mesi generati:', availableMonths)
+  console.log('Mesi generati (settembre-dicembre 2025):', availableMonths)
   
   return NextResponse.json(availableMonths)
 }

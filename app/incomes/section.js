@@ -12,7 +12,7 @@ export default function IncomesSection () {
       setMonths(data)
       if (data.length > 0) setSelectedMonth(data[0])
     })
-    fetch('/api/categories').then(r => r.json()).then(setCategories)
+    fetch('/api/categories?type=incomes').then(r => r.json()).then(setCategories)
   }, [])
 
   useEffect(() => {
