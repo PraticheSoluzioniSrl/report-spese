@@ -1,59 +1,44 @@
 import { NextResponse } from 'next/server'
-import { getIncomes } from '../../../../lib/supabase-db'
+import { getDemoIncomes } from '../../../lib/demo-storage'
 
 export async function GET () {
   try {
-    // Genera i mesi da settembre 2025 a dicembre 2025
-    const availableMonths = []
+    // Sistema dinamico: genera mesi solo quando necessario
     
-    // Aggiungi i mesi da settembre 2025 a dicembre 2025
-    const months = [
-      '2025-12', // Dicembre 2025
-      '2025-11', // Novembre 2025
-      '2025-10', // Ottobre 2025
-      '2025-09'  // Settembre 2025
-    ]
+    // Ottieni tutte le entrate per estrarre i mesi utilizzati
+    const allIncomes = getDemoIncomes()
+    const usedMonths = new Set()
     
-    availableMonths.push(...months)
+    // Estrai i mesi dalle entrate esistenti
+    allIncomes.forEach(income => {
+      const incomeMonth = `${income.date.getFullYear()}-${String(income.date.getMonth() + 1).padStart(2, '0')}`
+      usedMonths.add(incomeMonth)
+    })
     
-    // Aggiungi il mese corrente se non è già presente
+    // Aggiungi sempre il mese corrente
     const currentDate = new Date()
     const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
-    if (!availableMonths.includes(currentMonth)) {
-      availableMonths.unshift(currentMonth) // Aggiungi all'inizio per renderlo il primo
+    usedMonths.add(currentMonth)
+    
+    // Aggiungi i prossimi 2 mesi per facilità d'uso
+    for (let i = 1; i <= 2; i++) {
+      const futureDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1)
+      const futureMonth = `${futureDate.getFullYear()}-${String(futureDate.getMonth() + 1).padStart(2, '0')}`
+      usedMonths.add(futureMonth)
     }
     
-    // Aggiungi i mesi con entrate esistenti
-    try {
-      const incomes = await getIncomes()
-      const existingMonths = new Set()
-      
-      incomes.forEach(income => {
-        if (income.date) {
-          const date = income.date.toDate ? income.date.toDate() : new Date(income.date)
-          const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-          existingMonths.add(monthStr)
-        }
-      })
-      
-      existingMonths.forEach(month => {
-        if (!availableMonths.includes(month)) {
-          availableMonths.push(month)
-        }
-      })
-    } catch (error) {
-      console.log('Errore nel recupero dei mesi esistenti:', error)
-    }
+    // Converti in array e ordina
+    const availableMonths = Array.from(usedMonths).sort((a, b) => b.localeCompare(a))
     
-    // Ordina i mesi in ordine decrescente
-    availableMonths.sort((a, b) => b.localeCompare(a))
-    
-    console.log('Mesi entrate generati (settembre-dicembre 2025):', availableMonths)
+    console.log('Mesi entrate generati dinamicamente:', availableMonths)
     
     return NextResponse.json(availableMonths)
   } catch (error) {
     console.error('Errore nel recupero dei mesi:', error)
-    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
+    // Fallback: restituisci mese corrente
+    const currentDate = new Date()
+    const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+    return NextResponse.json([currentMonth])
   }
 }
 

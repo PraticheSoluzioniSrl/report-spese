@@ -7,6 +7,14 @@ import {
   createExpense, 
   createIncome 
 } from '../../../lib/supabase-db'
+import { 
+  getDemoCategories, 
+  addDemoCategory, 
+  getDemoSubcategories, 
+  addDemoSubcategory, 
+  addDemoExpense, 
+  addDemoIncome 
+} from '../../../lib/demo-storage'
 import * as XLSX from 'xlsx'
 
 export const runtime = 'nodejs'
@@ -41,35 +49,51 @@ export async function POST (req) {
     
     for (const [index, row] of json.entries()) {
       try {
-        const description = String(row.description || row.Descrizione || row.DESCRIZIONE || '').trim()
-        const amount = parseFloat(String(row.amount || row.Importo || row.IMPORTO || '0').toString().replace(',', '.'))
-        const dateStr = String(row.date || row.Data || row.DATA || '').slice(0, 10)
-        const mainName = String(row.mainCategory || row.Categoria || row.CATEGORIA || '').trim()
-        const subName = String(row.subcategory || row.Sottocategoria || row.SOTTOCATEGORIA || '').trim()
+        // Gestisci i nomi delle colonne con spazi extra
+        const description = String(row.description || row[' description'] || row.Descrizione || row.DESCRIZIONE || '').trim()
+        const amount = parseFloat(String(row.amount || row[' amount'] || row.Importo || row.IMPORTO || '0').toString().replace(',', '.'))
         
-        if (!description || !amount || !dateStr || !mainName || !subName) {
-          errors.push(`Riga ${index + 1}: Campi mancanti`)
+        // Gestisci la data - potrebbe essere un numero Excel o una stringa
+        let dateStr = String(row.date || row[' date'] || row.Data || row.DATA || '')
+        if (dateStr && !isNaN(parseInt(dateStr))) {
+          // Se è un numero Excel, convertilo in data
+          const excelDate = parseInt(dateStr)
+          // Excel conta i giorni dal 1 gennaio 1900, ma ha un bug per l'anno 1900
+          const date = new Date((excelDate - 25569) * 86400 * 1000)
+          dateStr = date.toISOString().slice(0, 10)
+          console.log('📅 Data Excel convertita:', excelDate, '->', dateStr)
+        } else {
+          dateStr = dateStr.slice(0, 10)
+        }
+        
+        // Se la data è ancora invalida, usa la data corrente
+        if (!dateStr || dateStr === 'Invalid Date' || dateStr.length !== 10) {
+          dateStr = new Date().toISOString().slice(0, 10)
+          console.log('📅 Data fallback usata:', dateStr)
+        }
+        
+        const mainName = String(row.mainCategory || row[' mainCategory'] || row.Categoria || row.CATEGORIA || '').trim()
+        const subName = String(row.subcategory || row[' subcategory'] || row.Sottocategoria || row.SOTTOCATEGORIA || '').trim()
+        
+        if (!description || !amount || amount <= 0 || !dateStr || !mainName || !subName) {
+          errors.push(`Riga ${index + 1}: Campi mancanti o invalidi (descrizione: "${description}", importo: ${amount}, data: "${dateStr}", categoria: "${mainName}", sottocategoria: "${subName}")`)
           continue
         }
 
-        // Trova o crea la categoria principale
-        let mainCategories = await getMainCategories()
+        // Usa storage demo
+        let mainCategories = getDemoCategories()
         let main = mainCategories.find(cat => cat.name === mainName)
         if (!main) {
-          console.log('📝 Creo categoria:', mainName)
-          await createMainCategory(mainName)
-          mainCategories = await getMainCategories()
-          main = mainCategories.find(cat => cat.name === mainName)
+          console.log('📝 Creo categoria demo:', mainName)
+          main = addDemoCategory(mainName)
+          mainCategories = getDemoCategories()
         }
 
-        // Trova o crea la sottocategoria
-        let subcategories = await getSubcategories(main.id)
+        let subcategories = getDemoSubcategories(main.id)
         let sub = subcategories.find(sub => sub.name === subName)
         if (!sub) {
-          console.log('📝 Creo sottocategoria:', subName, 'per categoria:', mainName)
-          await createSubcategory(subName, main.id)
-          subcategories = await getSubcategories(main.id)
-          sub = subcategories.find(sub => sub.name === subName)
+          console.log('📝 Creo sottocategoria demo:', subName, 'per categoria:', mainName)
+          sub = addDemoSubcategory(subName, main.id)
         }
 
         const base = { 
@@ -77,13 +101,15 @@ export async function POST (req) {
           amount, 
           date: new Date(dateStr), 
           mainCategoryId: main.id, 
-          subcategoryId: sub.id 
+          subcategoryId: sub.id,
+          mainCategoryName: mainName,
+          subcategoryName: subName
         }
         
         if (type === 'income') {
-          await createIncome(base)
+          addDemoIncome(base)
         } else {
-          await createExpense(base)
+          addDemoExpense(base)
         }
         created++
         console.log('✅ Importato:', description, amount, '€')

@@ -130,25 +130,6 @@ export default function IncomesSection () {
         </form>
       </div>
 
-      <div className='mb-8 p-6 bg-blue-50 rounded-lg'>
-        <h3 className='text-xl font-semibold mb-4'>Gestione Categorie Entrate</h3>
-        <form onSubmit={async (e) => {
-          e.preventDefault()
-          const form = e.currentTarget
-          const formData = new FormData(form)
-          await fetch('/api/categories', { method: 'POST', body: formData })
-          form.reset()
-          // Ricarica le categorie
-          const updatedCategories = await fetch('/api/categories?type=incomes').then(r => r.json())
-          setCategories(updatedCategories)
-        }} className='grid grid-cols-1 md:grid-cols-2 gap-4 items-end'>
-          <div>
-            <label className='block text-sm font-medium text-gray-600 mb-1'>Nuova Categoria</label>
-            <input name='name' type='text' placeholder='Es. Investimenti' className='w-full px-4 py-2 border rounded-lg' required />
-          </div>
-          <button type='submit' className='bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700'>Aggiungi Categoria</button>
-        </form>
-      </div>
 
       <div>
         <h3 className='text-xl font-semibold mb-4 border-b pb-2'>Dettaglio Entrate del Mese</h3>

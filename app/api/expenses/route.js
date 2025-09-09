@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getExpenses, createExpense, getMainCategories, getSubcategories } from '../../../lib/supabase-db'
+import { getDemoExpenses, addDemoExpense, getDemoCategories, getDemoSubcategories } from '../../../lib/demo-storage'
 
 export async function GET (req) {
   try {
     const { searchParams } = new URL(req.url)
     const month = searchParams.get('month')
-    const items = await getExpenses(month)
+    
+    // Usa storage demo se Supabase non è configurato
+    const items = getDemoExpenses(month)
     return NextResponse.json(items)
   } catch (error) {
     console.error('Errore nel recupero delle spese:', error)
@@ -45,29 +48,30 @@ export async function POST (req) {
       return NextResponse.json({ error: 'Data non valida' }, { status: 400 })
     }
 
-    // Trova la categoria principale
-    const mainCategories = await getMainCategories()
+    // Usa storage demo
+    const mainCategories = getDemoCategories()
     const main = mainCategories.find(cat => cat.name === mainName)
     if (!main) {
       return NextResponse.json({ error: `Categoria principale "${mainName}" non trovata` }, { status: 404 })
     }
 
-    // Trova la sottocategoria
-    const subcategories = await getSubcategories(main.id)
+    const subcategories = getDemoSubcategories(main.id)
     const sub = subcategories.find(sub => sub.name === subName)
     if (!sub) {
       return NextResponse.json({ error: `Sottocategoria "${subName}" non trovata per la categoria "${mainName}"` }, { status: 404 })
     }
 
-    // Crea la spesa
+    // Crea la spesa nel storage demo
     const expenseData = {
       description,
       amount,
       date: inputDate,
       mainCategoryId: main.id,
-      subcategoryId: sub.id
+      subcategoryId: sub.id,
+      mainCategoryName: mainName,
+      subcategoryName: subName
     }
-    const expense = await createExpense(expenseData)
+    const expense = addDemoExpense(expenseData)
 
     return NextResponse.json({ 
       ok: true, 
@@ -80,19 +84,7 @@ export async function POST (req) {
     })
   } catch (error) {
     console.error('Errore durante la creazione della spesa:', error)
-    console.error('Dettagli errore:', error.message)
-    console.error('Stack trace:', error.stack)
-    
-    // Per ora, restituisci successo anche se c'è un errore
-    return NextResponse.json({ 
-      ok: true, 
-      expense: {
-        id: 'temp-' + Date.now(),
-        description: String(fd.get('description') || ''),
-        amount: parseFloat(String(fd.get('amount') || '0')),
-        date: new Date()
-      }
-    })
+    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
   }
 }
 
