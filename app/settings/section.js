@@ -157,7 +157,7 @@ export default function SettingsSection () {
                 )}
               </select>
               <div className='flex gap-2'>
-                <input name='subName' type='text' placeholder='Nuova sottocategoria' className='w-full px-4 py-2 border rounded-lg' required />
+                <input name='name' type='text' placeholder='Nuova sottocategoria' className='w-full px-4 py-2 border rounded-lg' required />
                 <button className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600'>Aggiungi</button>
               </div>
             </form>
