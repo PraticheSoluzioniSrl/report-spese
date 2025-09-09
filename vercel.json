@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "app/api/**/*.js": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "env": {
     "NODE_ENV": "production"
   }
