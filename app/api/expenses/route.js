@@ -7,8 +7,8 @@ export async function GET (req) {
     const { searchParams } = new URL(req.url)
     const month = searchParams.get('month')
     
-    // Usa storage demo se Supabase non è configurato
-    const items = getDemoExpenses(month)
+    // Usa Supabase se configurato, altrimenti demo storage
+    const items = await getExpenses(month)
     return NextResponse.json(items)
   } catch (error) {
     console.error('Errore nel recupero delle spese:', error)
@@ -48,30 +48,28 @@ export async function POST (req) {
       return NextResponse.json({ error: 'Data non valida' }, { status: 400 })
     }
 
-    // Usa storage demo
-    const mainCategories = getDemoCategories()
+    // Usa Supabase se configurato, altrimenti demo storage
+    const mainCategories = await getMainCategories()
     const main = mainCategories.find(cat => cat.name === mainName)
     if (!main) {
       return NextResponse.json({ error: `Categoria principale "${mainName}" non trovata` }, { status: 404 })
     }
 
-    const subcategories = getDemoSubcategories(main.id)
+    const subcategories = await getSubcategories(main.id)
     const sub = subcategories.find(sub => sub.name === subName)
     if (!sub) {
       return NextResponse.json({ error: `Sottocategoria "${subName}" non trovata per la categoria "${mainName}"` }, { status: 404 })
     }
 
-    // Crea la spesa nel storage demo
+    // Crea la spesa
     const expenseData = {
       description,
       amount,
       date: inputDate,
       mainCategoryId: main.id,
-      subcategoryId: sub.id,
-      mainCategoryName: mainName,
-      subcategoryName: subName
+      subcategoryId: sub.id
     }
-    const expense = addDemoExpense(expenseData)
+    const expense = await createExpense(expenseData)
 
     return NextResponse.json({ 
       ok: true, 

@@ -7,8 +7,8 @@ export async function GET (req) {
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type') // 'expenses' | 'incomes'
     
-    // Usa storage demo
-    const categories = getDemoCategories()
+    // Usa Supabase se configurato, altrimenti demo storage
+    const categories = await getMainCategories()
     const result = []
 
     // Categorie per le uscite (spese)
@@ -20,23 +20,26 @@ export async function GET (req) {
     for (const cat of categories) {
       // Filtra le categorie in base al tipo richiesto
       if (type === 'expenses' && expenseCategories.includes(cat.name)) {
+        const subcategories = await getSubcategories(cat.id)
         result.push({
           id: cat.id,
           name: cat.name,
-          subcategories: cat.subcategories.map(s => s.name)
+          subcategories: subcategories.map(s => s.name)
         })
       } else if (type === 'incomes' && incomeCategories.includes(cat.name)) {
+        const subcategories = await getSubcategories(cat.id)
         result.push({
           id: cat.id,
           name: cat.name,
-          subcategories: cat.subcategories.map(s => s.name)
+          subcategories: subcategories.map(s => s.name)
         })
       } else if (!type) {
         // Se non viene specificato il tipo, restituisci tutte le categorie
+        const subcategories = await getSubcategories(cat.id)
         result.push({
           id: cat.id,
           name: cat.name,
-          subcategories: cat.subcategories.map(s => s.name)
+          subcategories: subcategories.map(s => s.name)
         })
       }
     }
