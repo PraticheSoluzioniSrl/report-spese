@@ -57,9 +57,9 @@ export async function POST (req) {
     const name = String(fd.get('name') || '').trim()
     if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
     
-    // Usa storage demo
-    addDemoCategory(name)
-    return NextResponse.json({ ok: true })
+    // Usa Supabase se configurato, altrimenti demo storage
+    const category = await createMainCategory({ name })
+    return NextResponse.json({ ok: true, category })
   } catch (error) {
     console.error('Errore nella creazione della categoria:', error)
     return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })

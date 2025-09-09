@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createSubcategory, getMainCategories } from '../../../lib/supabase-db'
 import { addDemoSubcategory, getDemoCategories } from '../../../lib/demo-storage'
 
 export async function POST (req) {
@@ -11,8 +12,8 @@ export async function POST (req) {
       return NextResponse.json({ error: 'name and mainCategoryId required' }, { status: 400 })
     }
     
-    // Usa storage demo
-    const subcategory = addDemoSubcategory(name, mainCategoryId)
+    // Usa Supabase se configurato, altrimenti demo storage
+    const subcategory = await createSubcategory({ name, mainCategoryId: parseInt(mainCategoryId) })
     if (!subcategory) {
       return NextResponse.json({ error: 'Categoria principale non trovata' }, { status: 404 })
     }
