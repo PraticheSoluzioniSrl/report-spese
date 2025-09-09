@@ -11,30 +11,9 @@ export async function GET (req) {
     const categories = await getMainCategories()
     const result = []
 
-    // Categorie per le uscite (spese)
-    const expenseCategories = ['Alimentari', 'Trasporti', 'Casa', 'Salute', 'Svago', 'Altro']
-    
-    // Categorie per le entrate
-    const incomeCategories = ['Stipendio', 'Freelance', 'Investimenti', 'Vendite', 'Rimborsi', 'Altri Ricavi']
-
     for (const cat of categories) {
       // Filtra le categorie in base al tipo richiesto
-      if (type === 'expenses' && expenseCategories.includes(cat.name)) {
-        const subcategories = await getSubcategories(cat.id)
-        result.push({
-          id: cat.id,
-          name: cat.name,
-          subcategories: subcategories.map(s => s.name)
-        })
-      } else if (type === 'incomes' && incomeCategories.includes(cat.name)) {
-        const subcategories = await getSubcategories(cat.id)
-        result.push({
-          id: cat.id,
-          name: cat.name,
-          subcategories: subcategories.map(s => s.name)
-        })
-      } else if (!type) {
-        // Se non viene specificato il tipo, restituisci tutte le categorie
+      if (!type || cat.type === type) {
         const subcategories = await getSubcategories(cat.id)
         result.push({
           id: cat.id,
@@ -55,10 +34,11 @@ export async function POST (req) {
   try {
     const fd = await req.formData()
     const name = String(fd.get('name') || '').trim()
+    const type = String(fd.get('type') || '').trim() // 'expenses' o 'incomes'
     if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
     
     // Usa Supabase se configurato, altrimenti demo storage
-    const category = await createMainCategory({ name })
+    const category = await createMainCategory({ name, type })
     return NextResponse.json({ ok: true, category })
   } catch (error) {
     console.error('Errore nella creazione della categoria:', error)

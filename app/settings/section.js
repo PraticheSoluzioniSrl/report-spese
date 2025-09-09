@@ -38,6 +38,7 @@ export default function SettingsSection () {
     e.preventDefault()
     const form = e.currentTarget
     const fd = new FormData(form)
+    fd.set('type', activeTab === 'expenses' ? 'expenses' : 'incomes')
     await fetch('/api/categories', { method: 'POST', body: fd })
     form.reset()
     if (activeTab === 'expenses') {
