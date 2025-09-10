@@ -48,17 +48,22 @@ export default function IncomesSection () {
 
   const grandTotal = useMemo(() => Object.values(totalsByMain).reduce((a, b) => a + b, 0), [totalsByMain])
 
-  // Funzione per generare colori in base al valore (verde per entrate)
+  // Funzione per generare colori in base al valore (verde acceso a sbiadito)
   const getCategoryColor = (amount, maxAmount) => {
     if (amount === 0) return 'bg-gray-200 text-gray-600'
     
     const intensity = maxAmount > 0 ? amount / maxAmount : 0
     
-    if (intensity >= 0.8) return 'bg-green-600 text-white'
-    if (intensity >= 0.6) return 'bg-green-500 text-white'
-    if (intensity >= 0.4) return 'bg-green-400 text-white'
-    if (intensity >= 0.2) return 'bg-green-300 text-gray-800'
-    return 'bg-gray-300 text-gray-700'
+    if (intensity >= 0.9) return 'bg-green-600 text-white'
+    if (intensity >= 0.8) return 'bg-green-500 text-white'
+    if (intensity >= 0.7) return 'bg-green-400 text-white'
+    if (intensity >= 0.6) return 'bg-green-300 text-gray-800'
+    if (intensity >= 0.5) return 'bg-green-200 text-gray-800'
+    if (intensity >= 0.4) return 'bg-green-100 text-gray-800'
+    if (intensity >= 0.3) return 'bg-emerald-100 text-gray-800'
+    if (intensity >= 0.2) return 'bg-emerald-50 text-gray-800'
+    if (intensity >= 0.1) return 'bg-gray-100 text-gray-700'
+    return 'bg-gray-200 text-gray-600'
   }
 
   // Ordina le categorie per valore (dal più alto al più basso)
@@ -126,16 +131,6 @@ export default function IncomesSection () {
         </div>
       </div>
 
-      {/* Griglia delle categorie colorate */}
-      <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6'>
-        {sortedCategories.map(cat => (
-          <div key={cat.name} className={`${cat.colorClass} rounded-xl p-4 shadow-lg text-center transition-all duration-200 hover:scale-105`}>
-            <h3 className='text-sm font-medium mb-2'>{cat.name}</h3>
-            <p className='text-xl font-bold'>€ {cat.amount.toFixed(2)}</p>
-          </div>
-        ))}
-      </div>
-
       <div className='mb-8 p-6 bg-gray-50 rounded-lg'>
         <h3 className='text-xl font-semibold mb-4'>Aggiungi una nuova entrata</h3>
         <form onSubmit={onSubmit} className='grid grid-cols-1 md:grid-cols-3 gap-4 items-end'>
@@ -167,6 +162,18 @@ export default function IncomesSection () {
         </form>
       </div>
 
+      {/* Griglia delle categorie colorate */}
+      <div className='mb-8'>
+        <h3 className='text-xl font-semibold mb-4 border-b pb-2'>Entrate per Categoria</h3>
+        <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
+          {sortedCategories.map(cat => (
+            <div key={cat.name} className={`${cat.colorClass} rounded-xl p-4 shadow-lg text-center transition-all duration-200 hover:scale-105`}>
+              <h3 className='text-sm font-medium mb-2'>{cat.name}</h3>
+              <p className='text-xl font-bold'>€ {cat.amount.toFixed(2)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div>
         <h3 className='text-xl font-semibold mb-4 border-b pb-2'>Dettaglio Entrate del Mese</h3>
