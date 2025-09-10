@@ -20,15 +20,31 @@ export async function GET () {
     const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
     usedMonths.add(currentMonth)
     
-    // Aggiungi i prossimi 2 mesi per facilità d'uso
-    for (let i = 1; i <= 2; i++) {
-      const futureDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1)
-      const futureMonth = `${futureDate.getFullYear()}-${String(futureDate.getMonth() + 1).padStart(2, '0')}`
+    // Aggiungi i mesi futuri fino a dicembre 2025
+    const currentYear = currentDate.getFullYear()
+    const currentMonthIndex = currentDate.getMonth() // 0-11
+    
+    // Aggiungi tutti i mesi da quello corrente fino a dicembre 2025
+    for (let monthIndex = currentMonthIndex; monthIndex <= 11; monthIndex++) {
+      const futureMonth = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}`
       usedMonths.add(futureMonth)
     }
     
     // Converti in array e ordina
-    const availableMonths = Array.from(usedMonths).sort((a, b) => b.localeCompare(a))
+    let availableMonths = Array.from(usedMonths).sort((a, b) => b.localeCompare(a))
+    
+    // Filtra i mesi che non hanno dati significativi (solo per demo)
+    availableMonths = availableMonths.filter(month => {
+      const monthExpenses = allExpenses.filter(expense => {
+        const expenseMonth = `${expense.date.getFullYear()}-${String(expense.date.getMonth() + 1).padStart(2, '0')}`
+        return expenseMonth === month
+      })
+      // Mantieni il mese se ha almeno una spesa, se è il mese corrente, o se è un mese futuro
+      const monthYear = parseInt(month.split('-')[0])
+      const monthIndex = parseInt(month.split('-')[1]) - 1
+      const isFutureMonth = monthYear > currentYear || (monthYear === currentYear && monthIndex >= currentMonthIndex)
+      return monthExpenses.length > 0 || month === currentMonth || isFutureMonth
+    })
     
     console.log('Mesi spese generati dinamicamente:', availableMonths)
     

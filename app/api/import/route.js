@@ -49,20 +49,48 @@ export async function POST (req) {
     
     for (const [index, row] of json.entries()) {
       try {
-        // Gestisci i nomi delle colonne con spazi extra
-        const description = String(row.description || row[' description'] || row.Descrizione || row.DESCRIZIONE || '').trim()
-        const amount = parseFloat(String(row.amount || row[' amount'] || row.Importo || row.IMPORTO || '0').toString().replace(',', '.'))
+        // Gestisci i nomi delle colonne con spazi extra - cerca in tutte le possibili varianti
+        const description = String(
+          row.description || 
+          row[' description'] || 
+          row.Descrizione || 
+          row.DESCRIZIONE || 
+          row['Descrizione'] ||
+          row['DESCRIZIONE'] ||
+          ''
+        ).trim()
+        
+        const amount = parseFloat(String(
+          row.amount || 
+          row[' amount'] || 
+          row.Importo || 
+          row.IMPORTO || 
+          row['Importo'] ||
+          row['IMPORTO'] ||
+          '0'
+        ).toString().replace(',', '.'))
         
         // Gestisci la data - potrebbe essere un numero Excel o una stringa
-        let dateStr = String(row.date || row[' date'] || row.Data || row.DATA || '')
+        let dateStr = String(
+          row.date || 
+          row[' date'] || 
+          row.Data || 
+          row.DATA || 
+          row['Data'] ||
+          row['DATA'] ||
+          ''
+        )
+        
         if (dateStr && !isNaN(parseInt(dateStr))) {
           // Se è un numero Excel, convertilo in data
           const excelDate = parseInt(dateStr)
           // Excel conta i giorni dal 1 gennaio 1900, ma ha un bug per l'anno 1900
+          // La formula corretta è: (excelDate - 25569) * 86400 * 1000
           const date = new Date((excelDate - 25569) * 86400 * 1000)
           dateStr = date.toISOString().slice(0, 10)
           console.log('📅 Data Excel convertita:', excelDate, '->', dateStr)
-        } else {
+        } else if (dateStr) {
+          // Se è una stringa, prendi solo i primi 10 caratteri
           dateStr = dateStr.slice(0, 10)
         }
         
@@ -72,8 +100,31 @@ export async function POST (req) {
           console.log('📅 Data fallback usata:', dateStr)
         }
         
-        const mainName = String(row.mainCategory || row[' mainCategory'] || row.Categoria || row.CATEGORIA || '').trim()
-        const subName = String(row.subcategory || row[' subcategory'] || row.Sottocategoria || row.SOTTOCATEGORIA || '').trim()
+        const mainName = String(
+          row.mainCategory || 
+          row[' mainCategory'] || 
+          row.Categoria || 
+          row.CATEGORIA || 
+          row['Categoria'] ||
+          row['CATEGORIA'] ||
+          ''
+        ).trim()
+        
+        let subName = String(
+          row.subcategory || 
+          row[' subcategory'] || 
+          row.Sottocategoria || 
+          row.SOTTOCATEGORIA || 
+          row['Sottocategoria'] ||
+          row['SOTTOCATEGORIA'] ||
+          ''
+        ).trim()
+        
+        // Correggi errori di battitura comuni
+        if (subName === 'Spuoermercato') {
+          subName = 'Supermercato'
+          console.log('🔧 Corretto errore di battitura: Spuoermercato -> Supermercato')
+        }
         
         if (!description || !amount || amount <= 0 || !dateStr || !mainName || !subName) {
           errors.push(`Riga ${index + 1}: Campi mancanti o invalidi (descrizione: "${description}", importo: ${amount}, data: "${dateStr}", categoria: "${mainName}", sottocategoria: "${subName}")`)

@@ -10,7 +10,14 @@ export default function IncomesSection () {
   useEffect(() => {
     fetch('/api/incomes/months').then(r => r.json()).then(data => {
       setMonths(data)
-      if (data.length > 0) setSelectedMonth(data[0])
+      // Imposta il mese corrente come default
+      const currentDate = new Date()
+      const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+      if (data.includes(currentMonth)) {
+        setSelectedMonth(currentMonth)
+      } else if (data.length > 0) {
+        setSelectedMonth(data[0])
+      }
     })
     fetch('/api/categories?type=incomes').then(r => r.json()).then(setCategories)
   }, [])

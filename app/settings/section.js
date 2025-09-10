@@ -38,7 +38,8 @@ export default function SettingsSection () {
     e.preventDefault()
     const form = e.currentTarget
     const fd = new FormData(form)
-    fd.set('type', activeTab === 'expenses' ? 'expenses' : 'incomes')
+    const type = activeTab === 'expenses' ? 'expenses' : 'incomes'
+    fd.set('type', type)
     await fetch('/api/categories', { method: 'POST', body: fd })
     form.reset()
     if (activeTab === 'expenses') {
@@ -59,19 +60,27 @@ export default function SettingsSection () {
 
   async function addSub (e) {
     e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const fd = new FormData(form)
     const categoryName = fd.get('mainName')
     const categories = activeTab === 'expenses' ? expenseCategories : incomeCategories
     const category = categories.find(c => c.name === categoryName)
     if (category) {
       fd.set('mainCategoryId', category.id)
       await fetch('/api/subcategories', { method: 'POST', body: fd })
-      e.currentTarget.reset()
+      
+      // Reset del form solo se esiste
+      if (form) {
+        form.reset()
+      }
+      
       if (activeTab === 'expenses') {
         await loadExpenses()
       } else {
         await loadIncomes()
       }
+    } else {
+      alert('Errore: Categoria non trovata. Ricarica la pagina e riprova.')
     }
   }
 
@@ -163,8 +172,8 @@ export default function SettingsSection () {
               </div>
             </form>
             <ul className='space-y-2'>
-              {(activeTab === 'expenses' ? expenseSubcats : incomeSubcats).map(s => (
-                <li key={s} className='flex justify-between items-center p-2 bg-gray-100 rounded'>
+              {(activeTab === 'expenses' ? expenseSubcats : incomeSubcats).map((s, index) => (
+                <li key={`${s}-${index}`} className='flex justify-between items-center p-2 bg-gray-100 rounded'>
                   <span>{s}</span>
                   <button 
                     onClick={() => deleteSub(activeTab === 'expenses' ? selectedExpense : selectedIncome, s)} 
