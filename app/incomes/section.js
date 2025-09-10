@@ -48,6 +48,31 @@ export default function IncomesSection () {
 
   const grandTotal = useMemo(() => Object.values(totalsByMain).reduce((a, b) => a + b, 0), [totalsByMain])
 
+  // Funzione per generare colori in base al valore (verde per entrate)
+  const getCategoryColor = (amount, maxAmount) => {
+    if (amount === 0) return 'bg-gray-200 text-gray-600'
+    
+    const intensity = maxAmount > 0 ? amount / maxAmount : 0
+    
+    if (intensity >= 0.8) return 'bg-green-600 text-white'
+    if (intensity >= 0.6) return 'bg-green-500 text-white'
+    if (intensity >= 0.4) return 'bg-green-400 text-white'
+    if (intensity >= 0.2) return 'bg-green-300 text-gray-800'
+    return 'bg-gray-300 text-gray-700'
+  }
+
+  // Ordina le categorie per valore (dal più alto al più basso)
+  const sortedCategories = useMemo(() => {
+    const maxAmount = Math.max(...Object.values(totalsByMain))
+    return categories
+      .map(cat => ({
+        ...cat,
+        amount: totalsByMain[cat.name] || 0,
+        colorClass: getCategoryColor(totalsByMain[cat.name] || 0, maxAmount)
+      }))
+      .sort((a, b) => b.amount - a.amount)
+  }, [categories, totalsByMain])
+
   async function onSubmit (e) {
     e.preventDefault()
     const form = e.currentTarget
@@ -93,17 +118,22 @@ export default function IncomesSection () {
         </select>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center'>
-        {categories.map(cat => (
-          <div key={cat.name} className='bg-gray-100 rounded-xl p-4 shadow'>
-            <h2 className='text-md font-medium text-gray-600'>{cat.name}</h2>
-            <p className='text-2xl font-bold mt-1'>€ {Number(totalsByMain[cat.name] || 0).toFixed(2)}</p>
-          </div>
-        ))}
-        <div className='md:col-span-3 bg-green-700 text-white rounded-xl p-5 shadow-lg mt-2'>
+      {/* Entrate Totali del Mese */}
+      <div className='mb-6'>
+        <div className='bg-green-700 text-white rounded-xl p-5 shadow-lg text-center'>
           <h2 className='text-lg font-medium opacity-80'>Entrate Totali del Mese</h2>
           <p className='text-4xl font-bold mt-2'>€ {grandTotal.toFixed(2)}</p>
         </div>
+      </div>
+
+      {/* Griglia delle categorie colorate */}
+      <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6'>
+        {sortedCategories.map(cat => (
+          <div key={cat.name} className={`${cat.colorClass} rounded-xl p-4 shadow-lg text-center transition-all duration-200 hover:scale-105`}>
+            <h3 className='text-sm font-medium mb-2'>{cat.name}</h3>
+            <p className='text-xl font-bold'>€ {cat.amount.toFixed(2)}</p>
+          </div>
+        ))}
       </div>
 
       <div className='mb-8 p-6 bg-gray-50 rounded-lg'>
