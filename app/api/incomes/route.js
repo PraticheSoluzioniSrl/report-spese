@@ -7,8 +7,8 @@ export async function GET (req) {
     const { searchParams } = new URL(req.url)
     const month = searchParams.get('month')
     
-    // Usa storage demo
-    const items = getDemoIncomes(month)
+    // Usa Supabase se configurato, altrimenti demo storage
+    const items = await getIncomes(month)
     return NextResponse.json(items)
   } catch (error) {
     console.error('Errore nel recupero degli incassi:', error)
@@ -25,19 +25,43 @@ export async function POST (req) {
     const mainName = String(fd.get('mainCategoryId') || '').trim()
     const subName = String(fd.get('subcategoryName') || '').trim()
 
-    if (!description || !amount || !dateStr || !mainName || !subName) {
-      return NextResponse.json({ error: 'missing fields' }, { status: 400 })
+    // Validazione dei campi
+    if (!description) {
+      return NextResponse.json({ error: 'La descrizione è obbligatoria' }, { status: 400 })
+    }
+    if (!amount || amount <= 0) {
+      return NextResponse.json({ error: 'L\'importo deve essere maggiore di zero' }, { status: 400 })
+    }
+    if (!dateStr) {
+      return NextResponse.json({ error: 'La data è obbligatoria' }, { status: 400 })
+    }
+    if (!mainName) {
+      return NextResponse.json({ error: 'La categoria principale è obbligatoria' }, { status: 400 })
+    }
+    if (!subName) {
+      return NextResponse.json({ error: 'La sottocategoria è obbligatoria' }, { status: 400 })
     }
 
-    // Usa storage demo
-    const mainCategories = getDemoCategories()
+    // Validazione della data
+    const inputDate = new Date(dateStr)
+    if (isNaN(inputDate.getTime())) {
+      return NextResponse.json({ error: 'Data non valida' }, { status: 400 })
+    }
+
+    // Usa Supabase se configurato, altrimenti demo storage
+    const mainCategories = await getMainCategories()
     const main = mainCategories.find(cat => cat.name === mainName)
-    if (!main) return NextResponse.json({ error: 'main not found' }, { status: 404 })
+    if (!main) {
+      return NextResponse.json({ error: `Categoria principale "${mainName}" non trovata` }, { status: 404 })
+    }
 
-    const subcategories = getDemoSubcategories(main.id)
+    const subcategories = await getSubcategories(main.id)
     const sub = subcategories.find(sub => sub.name === subName)
-    if (!sub) return NextResponse.json({ error: 'sub not found' }, { status: 404 })
+    if (!sub) {
+      return NextResponse.json({ error: `Sottocategoria "${subName}" non trovata per la categoria "${mainName}"` }, { status: 404 })
+    }
 
+    // Crea l'entrata
     const incomeData = {
       description,
       amount,
@@ -47,7 +71,8 @@ export async function POST (req) {
       mainCategoryName: mainName,
       subcategoryName: subName
     }
-    addDemoIncome(incomeData)
+    
+    await createIncome(incomeData)
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Errore durante la creazione dell\'incasso:', error)
