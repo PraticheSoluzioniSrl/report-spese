@@ -131,20 +131,20 @@ export async function POST (req) {
           continue
         }
 
-        // Usa storage demo
-        let mainCategories = getDemoCategories()
+        // Usa Supabase se configurato, altrimenti demo storage
+        let mainCategories = await getMainCategories()
         let main = mainCategories.find(cat => cat.name === mainName)
         if (!main) {
-          console.log('📝 Creo categoria demo:', mainName)
-          main = addDemoCategory(mainName)
-          mainCategories = getDemoCategories()
+          console.log('📝 Creo categoria:', mainName)
+          main = await createMainCategory({ name: mainName, type: type })
+          mainCategories = await getMainCategories()
         }
 
-        let subcategories = getDemoSubcategories(main.id)
+        let subcategories = await getSubcategories(main.id)
         let sub = subcategories.find(sub => sub.name === subName)
         if (!sub) {
-          console.log('📝 Creo sottocategoria demo:', subName, 'per categoria:', mainName)
-          sub = addDemoSubcategory(subName, main.id)
+          console.log('📝 Creo sottocategoria:', subName, 'per categoria:', mainName)
+          sub = await createSubcategory({ name: subName, mainCategoryId: main.id })
         }
 
         const base = { 
@@ -158,9 +158,9 @@ export async function POST (req) {
         }
         
         if (type === 'income') {
-          addDemoIncome(base)
+          await createIncome(base)
         } else {
-          addDemoExpense(base)
+          await createExpense(base)
         }
         created++
         console.log('✅ Importato:', description, amount, '€')
