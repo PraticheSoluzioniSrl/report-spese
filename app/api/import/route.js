@@ -130,7 +130,7 @@ export async function POST (req) {
           ''
         ).trim()
         
-        const paymentMethod = String(
+        let paymentMethod = String(
           row.paymentMethod || 
           row[' paymentMethod'] || 
           row['paymentMethod '] ||  // Gestisce spazio extra
@@ -141,6 +141,31 @@ export async function POST (req) {
           row['METODO_PAGAMENTO'] ||
           'contanti'
         ).trim()
+        
+        // Mappa i valori comuni ai valori del sistema
+        const paymentMethodMap = {
+          'pos': 'pos',
+          'POS': 'pos',
+          'bonifico': 'bonifico',
+          'BONIFICO': 'bonifico',
+          'Bonifico': 'bonifico',
+          'contanti': 'contanti',
+          'CONTANTI': 'contanti',
+          'Contanti': 'contanti',
+          'carta': 'carta',
+          'CARTA': 'carta',
+          'Carta': 'carta',
+          'carta di credito': 'carta',
+          'CARTA DI CREDITO': 'carta',
+          'paypal': 'paypal',
+          'PAYPAL': 'paypal',
+          'PayPal': 'paypal',
+          'altro': 'altro',
+          'ALTRO': 'altro',
+          'Altro': 'altro'
+        }
+        
+        paymentMethod = paymentMethodMap[paymentMethod] || paymentMethod.toLowerCase()
         
         console.log('💳 PaymentMethod rilevato:', paymentMethod, 'da riga:', Object.keys(row).filter(k => k.toLowerCase().includes('payment')))
         
