@@ -196,6 +196,13 @@ export default function ExpensesSection () {
 
   const subcatsForSelected = flatSubcats[selectedMain] || []
 
+  // Aggiorna selectedMain quando si modifica una spesa
+  useEffect(() => {
+    if (editingExpense && editingExpense.mainCategory?.name) {
+      setSelectedMain(editingExpense.mainCategory.name)
+    }
+  }, [editingExpense])
+
   // Funzione per esportare le spese
   async function exportExpenses(month = null) {
     try {

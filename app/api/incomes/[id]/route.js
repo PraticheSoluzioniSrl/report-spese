@@ -45,16 +45,27 @@ export async function PUT(req, { params }) {
     // Trova categoria e sottocategoria
     const { getMainCategories, getSubcategories } = await import('../../../../lib/supabase-db')
     const categories = await getMainCategories()
-    const subcategories = await getSubcategories()
     
     const main = categories.find(cat => cat.name === mainName)
     if (!main) {
       return NextResponse.json({ error: `Categoria principale "${mainName}" non trovata` }, { status: 404 })
     }
     
-    const sub = subcategories.find(sub => sub.name === subName)
-    if (!sub) {
-      return NextResponse.json({ error: `Sottocategoria "${subName}" non trovata per la categoria "${mainName}"` }, { status: 404 })
+    // Ottieni le sottocategorie per la categoria specifica
+    const subcategories = await getSubcategories()
+    let sub = null
+    
+    if (subName) {
+      sub = subcategories.find(sub => sub.name === subName && sub.main_category_id === main.id)
+      if (!sub) {
+        return NextResponse.json({ error: `Sottocategoria "${subName}" non trovata per la categoria "${mainName}"` }, { status: 404 })
+      }
+    } else {
+      // Se non c'è sottocategoria, usa la prima disponibile per quella categoria
+      sub = subcategories.find(sub => sub.main_category_id === main.id)
+      if (!sub) {
+        return NextResponse.json({ error: `Nessuna sottocategoria trovata per la categoria "${mainName}"` }, { status: 404 })
+      }
     }
 
     // Aggiorna l'entrata

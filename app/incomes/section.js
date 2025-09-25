@@ -160,6 +160,13 @@ export default function IncomesSection () {
 
   const subcatsForSelected = flatSubcats[selectedMain] || []
 
+  // Aggiorna selectedMain quando si modifica un'entrata
+  useEffect(() => {
+    if (editingIncome && editingIncome.mainCategory?.name) {
+      setSelectedMain(editingIncome.mainCategory.name)
+    }
+  }, [editingIncome])
+
   // Funzione per esportare le entrate
   async function exportIncomes(month = null) {
     try {
