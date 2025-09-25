@@ -32,6 +32,7 @@ CREATE TABLE expenses (
   date TIMESTAMP WITH TIME ZONE NOT NULL,
   main_category_id BIGINT REFERENCES main_categories(id),
   subcategory_id BIGINT REFERENCES subcategories(id),
+  payment_method TEXT DEFAULT 'contanti',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -43,6 +44,7 @@ CREATE TABLE incomes (
   date TIMESTAMP WITH TIME ZONE NOT NULL,
   main_category_id BIGINT REFERENCES main_categories(id),
   subcategory_id BIGINT REFERENCES subcategories(id),
+  payment_method TEXT DEFAULT 'contanti',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

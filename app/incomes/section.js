@@ -198,7 +198,7 @@ export default function IncomesSection () {
 
       <div className='mb-8 p-6 bg-gray-50 rounded-lg'>
         <h3 className='text-xl font-semibold mb-4'>Aggiungi una nuova entrata</h3>
-        <form onSubmit={onSubmit} className='grid grid-cols-1 md:grid-cols-3 gap-4 items-end'>
+        <form onSubmit={onSubmit} className='grid grid-cols-1 md:grid-cols-4 gap-4 items-end'>
           <div className='md:col-span-3'>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Descrizione</label>
             <input name='description' type='text' placeholder='Es. Stipendio' className='w-full px-4 py-2 border rounded-lg' required />
@@ -217,6 +217,17 @@ export default function IncomesSection () {
             <label className='block text-sm font-medium text-gray-600 mb-1'>Sottocategoria</label>
             <select name='subcategoryName' className='w-full px-4 py-2 border rounded-lg'>
               {subcatsForSelected?.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className='block text-sm font-medium text-gray-600 mb-1'>Metodo di Pagamento</label>
+            <select name='paymentMethod' className='w-full px-4 py-2 border rounded-lg' defaultValue='contanti'>
+              <option value='contanti'>Contanti</option>
+              <option value='bonifico'>Bonifico</option>
+              <option value='pos'>POS</option>
+              <option value='carta'>Carta di Credito</option>
+              <option value='paypal'>PayPal</option>
+              <option value='altro'>Altro</option>
             </select>
           </div>
           <div className='md:col-span-3'>
@@ -317,6 +328,7 @@ export default function IncomesSection () {
                   <div>
                     <p className='font-semibold'>{e.description}</p>
                     <p className='text-sm text-gray-500'>{e.mainCategory.name} {'>'} {e.subcategory.name}</p>
+                    <p className='text-xs text-green-600'>{e.paymentMethod || 'contanti'}</p>
                   </div>
                 </div>
                 <div className='flex items-center gap-4'>

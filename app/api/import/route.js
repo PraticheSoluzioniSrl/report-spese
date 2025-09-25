@@ -130,6 +130,16 @@ export async function POST (req) {
           ''
         ).trim()
         
+        const paymentMethod = String(
+          row.paymentMethod || 
+          row[' paymentMethod'] || 
+          row['Metodo Pagamento'] || 
+          row['METODO PAGAMENTO'] || 
+          row['metodo_pagamento'] ||
+          row['METODO_PAGAMENTO'] ||
+          'contanti'
+        ).trim()
+        
         // Correggi errori di battitura comuni
         if (subName === 'Spuoermercato') {
           subName = 'Supermercato'
@@ -164,7 +174,8 @@ export async function POST (req) {
           mainCategoryId: main.id, 
           subcategoryId: sub.id,
           mainCategoryName: mainName,
-          subcategoryName: subName
+          subcategoryName: subName,
+          paymentMethod
         }
         
         if (type === 'income') {

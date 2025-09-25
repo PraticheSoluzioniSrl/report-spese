@@ -39,7 +39,7 @@ export default function ImportSection () {
   return (
     <div className='w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-6'>
       <h3 className='text-xl font-semibold mb-4 border-b pb-2'>Importazione Massiva</h3>
-      <p className='text-sm text-gray-600 mb-4'>Carica un file Excel/CSV con colonne: <strong>description</strong>, <strong>amount</strong>, <strong>date</strong> (formato gg/mm/aaaa), <strong>mainCategory</strong>, <strong>subcategory</strong>. Le intestazioni italiane più comuni sono riconosciute.</p>
+      <p className='text-sm text-gray-600 mb-4'>Carica un file Excel/CSV con colonne: <strong>description</strong>, <strong>amount</strong>, <strong>date</strong> (formato gg/mm/aaaa), <strong>mainCategory</strong>, <strong>subcategory</strong>, <strong>paymentMethod</strong> (opzionale, default: contanti). Le intestazioni italiane più comuni sono riconosciute.</p>
       <div className='mb-4'>
         <label className='mr-3'>Tipo di import:</label>
         <select value={type} onChange={e => setType(e.target.value)} className='px-4 py-2 border rounded-lg'>

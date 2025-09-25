@@ -20,7 +20,7 @@ export async function GET(req) {
     
     if (format === 'csv') {
       // Prepara i dati per CSV
-      const csvHeaders = 'ID,Descrizione,Importo,Data,Categoria Principale,Sottocategoria,Data Creazione\n'
+      const csvHeaders = 'ID,Descrizione,Importo,Data,Categoria Principale,Sottocategoria,Metodo Pagamento,Data Creazione\n'
       const csvRows = expenses.map(expense => {
         const date = formatDateForExport(expense.date)
         const createdAt = expense.created_at ? formatDateForExport(expense.created_at) : 'N/A'
@@ -31,6 +31,7 @@ export async function GET(req) {
           date,
           `"${expense.main_category_name || expense.mainCategory?.name || 'N/A'}"`,
           `"${expense.subcategory_name || expense.subcategory?.name || 'N/A'}"`,
+          `"${expense.payment_method || expense.paymentMethod || 'contanti'}"`,
           createdAt
         ].join(',')
       }).join('\n')
