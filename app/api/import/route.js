@@ -182,6 +182,8 @@ export async function POST (req) {
           paymentMethod
         }
         
+        console.log('🔍 Import - base object creato:', JSON.stringify(base, null, 2))
+        
         if (type === 'income') {
           await createIncome(base)
         } else {
