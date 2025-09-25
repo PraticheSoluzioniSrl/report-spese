@@ -1,0 +1,4 @@
+description,amount,date,mainCategory,subcategory,paymentMethod
+Test spesa contanti,25.50,25/09/2025,Alimentari,Supermercato,contanti
+Test spesa POS,15.00,25/09/2025,Alimentari,Supermercato,pos
+Test spesa bonifico,100.00,25/09/2025,Utilità,Bollette,bonifico
