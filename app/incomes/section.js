@@ -9,6 +9,7 @@ export default function IncomesSection () {
   const [categories, setCategories] = useState([])
   const [filterMainCategory, setFilterMainCategory] = useState('')
   const [filterSubcategory, setFilterSubcategory] = useState('')
+  const [editingIncome, setEditingIncome] = useState(null)
 
   useEffect(() => {
     fetch('/api/incomes/months').then(r => r.json()).then(data => {
@@ -120,6 +121,32 @@ export default function IncomesSection () {
     await refreshMonths(selectedMonth)
   }
 
+  const updateIncome = async (e) => {
+    e.preventDefault()
+    const fd = new FormData(e.target)
+    
+    try {
+      const response = await fetch(`/api/incomes/${editingIncome.id}`, {
+        method: 'PUT',
+        body: fd
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        setIncomes(incomes.map(inc => 
+          inc.id === editingIncome.id ? result.income : inc
+        ))
+        setEditingIncome(null)
+      } else {
+        const error = await response.json()
+        alert('Errore: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Errore durante l\'aggiornamento:', error)
+      alert('Errore durante l\'aggiornamento')
+    }
+  }
+
   const flatSubcats = useMemo(() => {
     const map = {}
     for (const c of categories) map[c.name] = c.subcategories
@@ -197,31 +224,33 @@ export default function IncomesSection () {
       </div>
 
       <div className='mb-8 p-6 bg-gray-50 rounded-lg'>
-        <h3 className='text-xl font-semibold mb-4'>Aggiungi una nuova entrata</h3>
-        <form onSubmit={onSubmit} className='grid grid-cols-1 md:grid-cols-4 gap-4 items-end'>
+        <h3 className='text-xl font-semibold mb-4'>
+          {editingIncome ? 'Modifica entrata' : 'Aggiungi una nuova entrata'}
+        </h3>
+        <form onSubmit={editingIncome ? updateIncome : onSubmit} className='grid grid-cols-1 md:grid-cols-4 gap-4 items-end'>
           <div className='md:col-span-3'>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Descrizione</label>
-            <input name='description' type='text' placeholder='Es. Stipendio' className='w-full px-4 py-2 border rounded-lg' required />
+            <input name='description' type='text' placeholder='Es. Stipendio' className='w-full px-4 py-2 border rounded-lg' required defaultValue={editingIncome?.description || ''} />
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Importo (€)</label>
-            <input name='amount' type='number' step='0.01' min='0.01' placeholder='1500.00' className='w-full px-4 py-2 border rounded-lg' required />
+            <input name='amount' type='number' step='0.01' min='0.01' placeholder='1500.00' className='w-full px-4 py-2 border rounded-lg' required defaultValue={editingIncome?.amount || ''} />
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Categoria</label>
-            <select name='mainCategoryId' value={selectedMain} onChange={e => setSelectedMain(e.target.value)} className='w-full px-4 py-2 border rounded-lg'>
+            <select name='mainCategoryId' value={editingIncome ? editingIncome.mainCategory?.name : selectedMain} onChange={e => setSelectedMain(e.target.value)} className='w-full px-4 py-2 border rounded-lg'>
               {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Sottocategoria</label>
-            <select name='subcategoryName' className='w-full px-4 py-2 border rounded-lg'>
+            <select name='subcategoryName' className='w-full px-4 py-2 border rounded-lg' defaultValue={editingIncome?.subcategory?.name || ''}>
               {subcatsForSelected?.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Metodo di Pagamento</label>
-            <select name='paymentMethod' className='w-full px-4 py-2 border rounded-lg' defaultValue='contanti'>
+            <select name='paymentMethod' className='w-full px-4 py-2 border rounded-lg' defaultValue={editingIncome?.paymentMethod || 'contanti'}>
               <option value='contanti'>Contanti</option>
               <option value='bonifico'>Bonifico</option>
               <option value='pos'>POS</option>
@@ -232,9 +261,18 @@ export default function IncomesSection () {
           </div>
           <div className='md:col-span-3'>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Data</label>
-            <input name='date' type='date' className='w-full px-4 py-2 border rounded-lg' required />
+            <input name='date' type='date' className='w-full px-4 py-2 border rounded-lg' required defaultValue={editingIncome?.date ? new Date(editingIncome.date).toISOString().split('T')[0] : ''} />
           </div>
-          <button className='md:col-span-3 w-full bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-700 mt-2'>Aggiungi Entrata</button>
+          <div className='md:col-span-3 flex gap-2'>
+            <button type='submit' className='flex-1 bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-700 mt-2'>
+              {editingIncome ? 'Aggiorna Entrata' : 'Aggiungi Entrata'}
+            </button>
+            {editingIncome && (
+              <button type='button' onClick={() => setEditingIncome(null)} className='px-4 bg-gray-500 text-white font-semibold py-3 rounded-lg hover:bg-gray-600 mt-2'>
+                Annulla
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
@@ -333,6 +371,9 @@ export default function IncomesSection () {
                 </div>
                 <div className='flex items-center gap-4'>
                   <p className='font-semibold text-lg'>€ {Number(e.amount).toFixed(2)}</p>
+                  <button onClick={() => setEditingIncome(e)} className='text-green-500 hover:text-green-700 text-sm font-medium px-2 py-1 border border-green-500 rounded hover:bg-green-50'>
+                    Modifica
+                  </button>
                   <button onClick={() => deleteIncome(e.id)} className='text-gray-400 hover:text-red-500 text-2xl font-bold'>&times;</button>
                 </div>
               </li>

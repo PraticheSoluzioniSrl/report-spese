@@ -133,12 +133,16 @@ export async function POST (req) {
         const paymentMethod = String(
           row.paymentMethod || 
           row[' paymentMethod'] || 
+          row['paymentMethod '] ||  // Gestisce spazio extra
+          row[' paymentMethod '] || // Gestisce spazi su entrambi i lati
           row['Metodo Pagamento'] || 
           row['METODO PAGAMENTO'] || 
           row['metodo_pagamento'] ||
           row['METODO_PAGAMENTO'] ||
           'contanti'
         ).trim()
+        
+        console.log('💳 PaymentMethod rilevato:', paymentMethod, 'da riga:', Object.keys(row).filter(k => k.toLowerCase().includes('payment')))
         
         // Correggi errori di battitura comuni
         if (subName === 'Spuoermercato') {
