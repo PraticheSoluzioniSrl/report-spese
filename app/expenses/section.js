@@ -1,20 +1,22 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import { getDefaultMonth } from '../../lib/month-utils'
 
 export default function ExpensesSection () {
   const [months, setMonths] = useState([])
   const [selectedMonth, setSelectedMonth] = useState('')
   const [expenses, setExpenses] = useState([])
   const [categories, setCategories] = useState([])
+  const [filterMainCategory, setFilterMainCategory] = useState('')
+  const [filterSubcategory, setFilterSubcategory] = useState('')
 
   useEffect(() => {
     fetch('/api/expenses/months').then(r => r.json()).then(data => {
       setMonths(data)
-      // Imposta il mese corrente come default
-      const currentDate = new Date()
-      const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
-      if (data.includes(currentMonth)) {
-        setSelectedMonth(currentMonth)
+      // Usa la funzione centralizzata per determinare il mese di default
+      const defaultMonth = getDefaultMonth()
+      if (data.includes(defaultMonth)) {
+        setSelectedMonth(defaultMonth)
       } else if (data.length > 0) {
         setSelectedMonth(data[0])
       }
@@ -47,6 +49,20 @@ export default function ExpensesSection () {
   }, [expenses, categories])
 
   const grandTotal = useMemo(() => Object.values(totalsByMain).reduce((a, b) => a + b, 0), [totalsByMain])
+
+  // Filtra le spese in base ai filtri selezionati
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+      const matchesMainCategory = !filterMainCategory || expense.mainCategory.name === filterMainCategory
+      const matchesSubcategory = !filterSubcategory || expense.subcategory.name === filterSubcategory
+      return matchesMainCategory && matchesSubcategory
+    })
+  }, [expenses, filterMainCategory, filterSubcategory])
+
+  // Calcola il totale delle spese filtrate
+  const filteredTotal = useMemo(() => {
+    return filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
+  }, [filteredExpenses])
 
   // Funzione per generare colori in base al valore (rosso acceso a sbiadito)
   const getCategoryColor = (amount, maxAmount) => {
@@ -117,7 +133,10 @@ export default function ExpensesSection () {
   async function refreshMonths (newMonth) {
     const ms = await fetch('/api/expenses/months').then(r => r.json())
     setMonths(ms)
-    const toUse = newMonth && ms.includes(newMonth) ? newMonth : (ms[0] || '')
+    // Mantieni la logica del mese di default
+    const defaultMonth = getDefaultMonth()
+    const toUse = newMonth && ms.includes(newMonth) ? newMonth : 
+                  (ms.includes(defaultMonth) ? defaultMonth : (ms[0] || ''))
     setSelectedMonth(toUse)
   }
 
@@ -150,13 +169,59 @@ export default function ExpensesSection () {
 
   const subcatsForSelected = flatSubcats[selectedMain] || []
 
+  // Funzione per esportare le spese
+  async function exportExpenses(month = null) {
+    try {
+      const url = month 
+        ? `/api/export/expenses?month=${month}&format=csv`
+        : `/api/export/expenses?format=csv`
+      
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error('Errore durante l\'esportazione')
+      }
+      
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = month 
+        ? `spese_${month}_${new Date().toISOString().split('T')[0]}.csv`
+        : `spese_tutte_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(downloadUrl)
+    } catch (error) {
+      console.error('Errore durante l\'esportazione:', error)
+      alert('Errore durante l\'esportazione delle spese')
+    }
+  }
+
   return (
     <div className='w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-6'>
-      <div className='flex items-center mb-4'>
-        <label className='mr-2 text-sm font-medium'>Mostra report per il mese di:</label>
-        <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className='px-4 py-2 border rounded-lg'>
-          {months.length === 0 ? <option value=''>Nessun dato</option> : months.map(m => <option key={m} value={m}>{new Date(m + '-02').toLocaleString('it-IT', { month: 'long', year: 'numeric' })}</option>)}
-        </select>
+      <div className='flex items-center justify-between mb-4'>
+        <div className='flex items-center'>
+          <label className='mr-2 text-sm font-medium'>Mostra report per il mese di:</label>
+          <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className='px-4 py-2 border rounded-lg'>
+            {months.length === 0 ? <option value=''>Nessun dato</option> : months.map(m => <option key={m} value={m}>{new Date(m + '-02').toLocaleString('it-IT', { month: 'long', year: 'numeric' })}</option>)}
+          </select>
+        </div>
+        <div className='flex gap-2'>
+          <button 
+            onClick={() => exportExpenses(selectedMonth)}
+            disabled={!selectedMonth}
+            className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium'
+          >
+            📊 Esporta Mese
+          </button>
+          <button 
+            onClick={() => exportExpenses()}
+            className='px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium'
+          >
+            📋 Esporta Tutto
+          </button>
+        </div>
       </div>
 
       {/* Spesa Totale del Mese */}
@@ -212,13 +277,77 @@ export default function ExpensesSection () {
         </div>
       </div>
 
+      {/* Filtri */}
+      <div className='mb-6 p-4 bg-gray-50 rounded-lg'>
+        <h3 className='text-lg font-semibold mb-3'>Filtri</h3>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-4 items-end'>
+          <div>
+            <label className='block text-sm font-medium text-gray-600 mb-1'>Categoria Principale</label>
+            <select 
+              value={filterMainCategory} 
+              onChange={e => {
+                setFilterMainCategory(e.target.value)
+                setFilterSubcategory('') // Reset sottocategoria quando cambia categoria principale
+              }} 
+              className='w-full px-3 py-2 border rounded-lg'
+            >
+              <option value=''>Tutte le categorie</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.name}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className='block text-sm font-medium text-gray-600 mb-1'>Sottocategoria</label>
+            <select 
+              value={filterSubcategory} 
+              onChange={e => setFilterSubcategory(e.target.value)} 
+              className='w-full px-3 py-2 border rounded-lg'
+              disabled={!filterMainCategory}
+            >
+              <option value=''>Tutte le sottocategorie</option>
+              {filterMainCategory && flatSubcats[filterMainCategory]?.map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+          </div>
+          <div className='text-center'>
+            <div className='text-sm text-gray-600 mb-1'>Totale Filtrato</div>
+            <div className='text-2xl font-bold text-red-600'>€ {filteredTotal.toFixed(2)}</div>
+            {(filterMainCategory || filterSubcategory) && (
+              <button 
+                onClick={() => {
+                  setFilterMainCategory('')
+                  setFilterSubcategory('')
+                }}
+                className='text-xs text-blue-600 hover:text-blue-800 mt-1'
+              >
+                Rimuovi filtri
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div>
-        <h3 className='text-xl font-semibold mb-4 border-b pb-2'>Dettaglio Spese del Mese</h3>
+        <h3 className='text-xl font-semibold mb-4 border-b pb-2'>
+          Dettaglio Spese del Mese
+          {(filterMainCategory || filterSubcategory) && (
+            <span className='text-sm font-normal text-gray-600 ml-2'>
+              (filtrate: {filteredExpenses.length} di {expenses.length})
+            </span>
+          )}
+        </h3>
         <ul className='space-y-3'>
-          {expenses.length === 0 ? (
-            <li className='text-center text-gray-500 py-8'>Nessuna spesa registrata per questo mese.</li>
+          {filteredExpenses.length === 0 ? (
+            <li className='text-center text-gray-500 py-8'>
+              {expenses.length === 0 
+                ? 'Nessuna spesa registrata per questo mese.' 
+                : 'Nessuna spesa corrisponde ai filtri selezionati.'
+              }
+            </li>
           ) : (
-            [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date)).map(e => (
+            [...filteredExpenses].sort((a, b) => new Date(b.date) - new Date(a.date)).map(e => (
               <li key={e.id} className='flex items-center justify-between bg-gray-50 p-3 rounded-lg'>
                 <div className='flex items-center gap-3'>
                   <span className='text-sm text-gray-500'>{new Date(e.date).toLocaleDateString('it-IT')}</span>

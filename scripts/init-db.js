@@ -27,7 +27,7 @@ async function initDatabase() {
       const passwordHash = await bcrypt.hash('C0S1M0', 10)
       
       const { data, error } = await supabase
-        .from('users')
+        .from('users')                                                                   
         .insert([{
           username: 'admin',
           password_hash: passwordHash

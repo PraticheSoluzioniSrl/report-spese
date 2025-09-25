@@ -15,6 +15,7 @@ import {
   addDemoExpense, 
   addDemoIncome 
 } from '../../../lib/demo-storage'
+import { parseDateFromImport } from '../../../lib/month-utils'
 import * as XLSX from 'xlsx'
 
 export const runtime = 'nodejs'
@@ -81,24 +82,33 @@ export async function POST (req) {
           ''
         )
         
+        let parsedDate = null
+        
         if (dateStr && !isNaN(parseInt(dateStr))) {
           // Se è un numero Excel, convertilo in data
           const excelDate = parseInt(dateStr)
           // Excel conta i giorni dal 1 gennaio 1900, ma ha un bug per l'anno 1900
           // La formula corretta è: (excelDate - 25569) * 86400 * 1000
-          const date = new Date((excelDate - 25569) * 86400 * 1000)
-          dateStr = date.toISOString().slice(0, 10)
-          console.log('📅 Data Excel convertita:', excelDate, '->', dateStr)
+          parsedDate = new Date((excelDate - 25569) * 86400 * 1000)
+          console.log('📅 Data Excel convertita:', excelDate, '->', parsedDate.toISOString().slice(0, 10))
         } else if (dateStr) {
-          // Se è una stringa, prendi solo i primi 10 caratteri
-          dateStr = dateStr.slice(0, 10)
+          // Se è una stringa, prova a parsarla con la funzione utility
+          try {
+            parsedDate = parseDateFromImport(dateStr)
+            console.log('📅 Data stringa parsata:', dateStr, '->', parsedDate.toISOString().slice(0, 10))
+          } catch (error) {
+            console.log('📅 Errore nel parsing della data:', dateStr, error.message)
+            parsedDate = null
+          }
         }
         
         // Se la data è ancora invalida, usa la data corrente
-        if (!dateStr || dateStr === 'Invalid Date' || dateStr.length !== 10) {
-          dateStr = new Date().toISOString().slice(0, 10)
-          console.log('📅 Data fallback usata:', dateStr)
+        if (!parsedDate || isNaN(parsedDate.getTime())) {
+          parsedDate = new Date()
+          console.log('📅 Data fallback usata:', parsedDate.toISOString().slice(0, 10))
         }
+        
+        dateStr = parsedDate.toISOString().slice(0, 10)
         
         const mainName = String(
           row.mainCategory || 
