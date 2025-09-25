@@ -52,17 +52,17 @@ export async function PUT(req, { params }) {
     }
     
     // Ottieni le sottocategorie per la categoria specifica
-    const subcategories = await getSubcategories()
+    const subcategories = await getSubcategories(main.id)
     let sub = null
     
     if (subName) {
-      sub = subcategories.find(sub => sub.name === subName && sub.main_category_id === main.id)
+      sub = subcategories.find(sub => sub.name === subName)
       if (!sub) {
         return NextResponse.json({ error: `Sottocategoria "${subName}" non trovata per la categoria "${mainName}"` }, { status: 404 })
       }
     } else {
       // Se non c'è sottocategoria, usa la prima disponibile per quella categoria
-      sub = subcategories.find(sub => sub.main_category_id === main.id)
+      sub = subcategories[0]
       if (!sub) {
         return NextResponse.json({ error: `Nessuna sottocategoria trovata per la categoria "${mainName}"` }, { status: 404 })
       }
