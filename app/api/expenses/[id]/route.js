@@ -24,6 +24,7 @@ export async function PUT(req, { params }) {
     const mainName = String(fd.get('mainCategoryId') || '').trim()
     const subName = String(fd.get('subcategoryName') || '').trim()
     const paymentMethod = String(fd.get('paymentMethod') || 'contanti').trim()
+    const accountId = String(fd.get('accountId') || '').trim() || null
 
     // Validazione dei campi
     if (!description) {
@@ -76,7 +77,8 @@ export async function PUT(req, { params }) {
       date: inputDate,
       mainCategoryId: main.id,
       subcategoryId: sub.id,
-      paymentMethod
+      paymentMethod,
+      accountId: accountId || null
     }
     
     const updatedExpense = await updateExpense(expenseData)

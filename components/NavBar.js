@@ -7,6 +7,7 @@ export default function NavBar ({ logout }) {
   const tabs = [
     { href: '/expenses', label: 'Report Spese' },
     { href: '/incomes', label: 'Entrate' },
+    { href: '/accounts', label: 'Conti' },
     { href: '/deadlines', label: 'Scadenze' },
     { href: '/analysis', label: 'Analisi Grafica' },
     { href: '/import', label: 'Import' },

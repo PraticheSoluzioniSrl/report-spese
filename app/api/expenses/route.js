@@ -25,6 +25,7 @@ export async function POST (req) {
     const mainName = String(fd.get('mainCategoryId') || '').trim()
     const subName = String(fd.get('subcategoryName') || '').trim()
     const paymentMethod = String(fd.get('paymentMethod') || 'contanti').trim()
+    const accountId = String(fd.get('accountId') || '').trim() || null
 
     // Validazione dei campi
     if (!description) {
@@ -69,7 +70,8 @@ export async function POST (req) {
       date: inputDate,
       mainCategoryId: main.id,
       subcategoryId: sub.id,
-      paymentMethod
+      paymentMethod,
+      accountId: accountId || null
     }
     const expense = await createExpense(expenseData)
 

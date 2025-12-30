@@ -7,6 +7,7 @@ export default function IncomesSection () {
   const [selectedMonth, setSelectedMonth] = useState('')
   const [incomes, setIncomes] = useState([])
   const [categories, setCategories] = useState([])
+  const [accounts, setAccounts] = useState([])
   const [filterMainCategory, setFilterMainCategory] = useState('')
   const [filterSubcategory, setFilterSubcategory] = useState('')
   const [editingIncome, setEditingIncome] = useState(null)
@@ -312,7 +313,16 @@ export default function IncomesSection () {
               <option value='altro'>Altro</option>
             </select>
           </div>
-          <div className='md:col-span-3'>
+          <div>
+            <label className='block text-sm font-medium text-gray-600 mb-1'>Conto</label>
+            <select name='accountId' className='w-full px-4 py-2 border rounded-lg' defaultValue={editingIncome?.accountId || ''}>
+              <option value=''>Nessun conto</option>
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>{acc.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className='md:col-span-2'>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Data</label>
             <input name='date' type='date' className='w-full px-4 py-2 border rounded-lg' required defaultValue={editingIncome?.date ? new Date(editingIncome.date).toISOString().split('T')[0] : ''} />
           </div>

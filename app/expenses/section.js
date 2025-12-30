@@ -7,6 +7,7 @@ export default function ExpensesSection () {
   const [selectedMonth, setSelectedMonth] = useState('')
   const [expenses, setExpenses] = useState([])
   const [categories, setCategories] = useState([])
+  const [accounts, setAccounts] = useState([])
   const [filterMainCategory, setFilterMainCategory] = useState('')
   const [filterSubcategory, setFilterSubcategory] = useState('')
   const [editingExpense, setEditingExpense] = useState(null)
@@ -59,6 +60,17 @@ export default function ExpensesSection () {
       .catch(error => {
         console.error('Errore nel caricamento delle categorie:', error)
         setCategories([])
+      })
+    
+    fetch('/api/accounts')
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento dei conti')
+        return r.json()
+      })
+      .then(setAccounts)
+      .catch(error => {
+        console.error('Errore nel caricamento dei conti:', error)
+        setAccounts([])
       })
   }, [])
 
@@ -370,7 +382,16 @@ export default function ExpensesSection () {
               <option value='altro'>Altro</option>
             </select>
           </div>
-          <div className='md:col-span-3'>
+          <div>
+            <label className='block text-sm font-medium text-gray-600 mb-1'>Conto</label>
+            <select name='accountId' className='w-full px-4 py-2 border rounded-lg' defaultValue={editingExpense?.accountId || ''}>
+              <option value=''>Nessun conto</option>
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>{acc.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className='md:col-span-2'>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Data</label>
             <input name='date' type='date' className='w-full px-4 py-2 border rounded-lg' required defaultValue={editingExpense?.date ? new Date(editingExpense.date).toISOString().split('T')[0] : ''} />
           </div>
