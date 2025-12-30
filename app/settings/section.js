@@ -71,7 +71,14 @@ export default function SettingsSection () {
     fd.set('type', type)
     try {
       const response = await fetch('/api/categories', { method: 'POST', body: fd })
-      if (!response.ok) throw new Error('Errore nella creazione della categoria')
+      const data = await response.json()
+      if (!response.ok) {
+        const errorMsg = data.error || 'Errore nella creazione della categoria'
+        console.error('Errore API:', errorMsg, data)
+        alert(errorMsg)
+        return
+      }
+      console.log('Categoria creata con successo:', data)
       form.reset()
       if (activeTab === 'expenses') {
         await loadExpenses()
@@ -80,7 +87,7 @@ export default function SettingsSection () {
       }
     } catch (error) {
       console.error('Errore nella creazione della categoria:', error)
-      alert('Errore durante la creazione della categoria')
+      alert('Errore durante la creazione della categoria: ' + error.message)
     }
   }
 
