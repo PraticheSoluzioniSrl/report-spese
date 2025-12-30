@@ -40,11 +40,14 @@ export async function POST (req) {
     // Usa Supabase se configurato, altrimenti demo storage
     const category = await createMainCategory({ name, type: type || 'expenses' })
     if (!category) {
+      console.error('createMainCategory ha restituito null/undefined')
       return NextResponse.json({ error: 'Errore nella creazione della categoria' }, { status: 500 })
     }
+    console.log('Categoria creata con successo:', category)
     return NextResponse.json({ ok: true, category })
   } catch (error) {
     console.error('Errore nella creazione della categoria:', error)
+    console.error('Stack trace:', error.stack)
     return NextResponse.json({ error: error.message || 'Errore interno del server' }, { status: 500 })
   }
 }
