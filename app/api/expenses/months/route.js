@@ -20,14 +20,20 @@ export async function GET () {
     const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
     usedMonths.add(currentMonth)
     
-    // Aggiungi i mesi futuri fino a dicembre 2025
+    // Aggiungi i mesi futuri fino a dicembre dell'anno corrente
     const currentYear = currentDate.getFullYear()
     const currentMonthIndex = currentDate.getMonth() // 0-11
     
-    // Aggiungi tutti i mesi da quello corrente fino a dicembre 2025
+    // Aggiungi tutti i mesi da quello corrente fino a dicembre dell'anno corrente
     for (let monthIndex = currentMonthIndex; monthIndex <= 11; monthIndex++) {
       const futureMonth = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}`
       usedMonths.add(futureMonth)
+    }
+    
+    // Aggiungi tutti i mesi del 2026 (gennaio-dicembre)
+    for (let monthIndex = 0; monthIndex <= 11; monthIndex++) {
+      const month2026 = `2026-${String(monthIndex + 1).padStart(2, '0')}`
+      usedMonths.add(month2026)
     }
     
     // Converti in array e ordina
@@ -43,7 +49,8 @@ export async function GET () {
       const monthYear = parseInt(month.split('-')[0])
       const monthIndex = parseInt(month.split('-')[1]) - 1
       const isFutureMonth = monthYear > currentYear || (monthYear === currentYear && monthIndex >= currentMonthIndex)
-      return monthExpenses.length > 0 || month === currentMonth || isFutureMonth
+      const is2026 = monthYear === 2026
+      return monthExpenses.length > 0 || month === currentMonth || isFutureMonth || is2026
     })
     
     console.log('Mesi spese generati dinamicamente:', availableMonths)
