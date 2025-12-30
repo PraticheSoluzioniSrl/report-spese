@@ -32,10 +32,15 @@ export default function AnalysisSection () {
         setMonths(ms || [])
         // Usa la funzione centralizzata per determinare il mese di default
         const defaultMonth = getDefaultMonth()
+        // Se il mese corrente è disponibile, selezionalo automaticamente
         if (ms && ms.includes(defaultMonth)) {
           setSelectedMonth(defaultMonth)
         } else if (ms && ms.length > 0) {
+          // Altrimenti seleziona il primo mese disponibile (che dovrebbe essere il più recente)
           setSelectedMonth(ms[0])
+        } else {
+          // Fallback: usa il mese corrente anche se non è nella lista
+          setSelectedMonth(defaultMonth)
         }
       })
       .catch(error => {

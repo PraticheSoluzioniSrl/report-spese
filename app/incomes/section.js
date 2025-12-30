@@ -34,10 +34,15 @@ export default function IncomesSection () {
         setMonths(data || [])
         // Usa la funzione centralizzata per determinare il mese di default
         const defaultMonth = getDefaultMonth()
+        // Se il mese corrente è disponibile, selezionalo automaticamente
         if (data && data.includes(defaultMonth)) {
           setSelectedMonth(defaultMonth)
         } else if (data && data.length > 0) {
+          // Altrimenti seleziona il primo mese disponibile (che dovrebbe essere il più recente)
           setSelectedMonth(data[0])
+        } else {
+          // Fallback: usa il mese corrente anche se non è nella lista
+          setSelectedMonth(defaultMonth)
         }
       })
       .catch(error => {
