@@ -3,6 +3,8 @@ import { getIncomes } from '../../../../lib/supabase-db'
 import { getDemoIncomes } from '../../../../lib/demo-storage'
 import { formatDateForExport } from '../../../../lib/month-utils'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url)

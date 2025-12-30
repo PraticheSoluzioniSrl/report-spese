@@ -5,8 +5,15 @@ export default function DeadlinesSection () {
   const [deadlines, setDeadlines] = useState([])
 
   async function load () {
-    const data = await fetch('/api/deadlines').then(r => r.json())
-    setDeadlines(data)
+    try {
+      const response = await fetch('/api/deadlines')
+      if (!response.ok) throw new Error('Errore nel caricamento delle scadenze')
+      const data = await response.json()
+      setDeadlines(data || [])
+    } catch (error) {
+      console.error('Errore nel caricamento delle scadenze:', error)
+      setDeadlines([])
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -15,19 +22,36 @@ export default function DeadlinesSection () {
     e.preventDefault()
     const form = e.currentTarget
     const fd = new FormData(form)
-    await fetch('/api/deadlines', { method: 'POST', body: fd })
-    form.reset()
-    load()
+    try {
+      const response = await fetch('/api/deadlines', { method: 'POST', body: fd })
+      if (!response.ok) throw new Error('Errore nella creazione della scadenza')
+      form.reset()
+      load()
+    } catch (error) {
+      console.error('Errore nella creazione della scadenza:', error)
+      alert('Errore durante la creazione della scadenza')
+    }
   }
 
   async function togglePaid (id, paid) {
-    await fetch(`/api/deadlines/${id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ paid }) })
-    load()
+    try {
+      const response = await fetch(`/api/deadlines/${id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ paid }) })
+      if (!response.ok) throw new Error('Errore nell\'aggiornamento della scadenza')
+      load()
+    } catch (error) {
+      console.error('Errore nell\'aggiornamento della scadenza:', error)
+    }
   }
 
   async function remove (id) {
-    await fetch(`/api/deadlines/${id}`, { method: 'DELETE' })
-    load()
+    try {
+      const response = await fetch(`/api/deadlines/${id}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Errore nell\'eliminazione della scadenza')
+      load()
+    } catch (error) {
+      console.error('Errore nell\'eliminazione della scadenza:', error)
+      alert('Errore durante l\'eliminazione della scadenza')
+    }
   }
 
   function addToCalendar (d) {

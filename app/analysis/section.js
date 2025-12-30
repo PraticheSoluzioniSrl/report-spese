@@ -4,7 +4,14 @@ import { Chart, ArcElement, Tooltip, Legend, Title } from 'chart.js'
 import { Pie } from 'react-chartjs-2'
 import { getDefaultMonth } from '../../lib/month-utils'
 
-Chart.register(ArcElement, Tooltip, Legend, Title)
+// Registra i componenti di Chart.js solo se Chart è disponibile
+if (typeof Chart !== 'undefined') {
+  try {
+    Chart.register(ArcElement, Tooltip, Legend, Title)
+  } catch (error) {
+    console.error('Errore nella registrazione di Chart.js:', error)
+  }
+}
 
 export default function AnalysisSection () {
   const [months, setMonths] = useState([])
@@ -16,30 +23,59 @@ export default function AnalysisSection () {
   const [categories, setCategories] = useState([])
 
   useEffect(() => {
-    fetch('/api/expenses/months').then(r => r.json()).then(ms => {
-      setMonths(ms)
-      // Usa la funzione centralizzata per determinare il mese di default
-      const defaultMonth = getDefaultMonth()
-      if (ms.includes(defaultMonth)) {
-        setSelectedMonth(defaultMonth)
-      } else if (ms.length > 0) {
-        setSelectedMonth(ms[0])
-      }
-    })
+    fetch('/api/expenses/months')
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento dei mesi')
+        return r.json()
+      })
+      .then(ms => {
+        setMonths(ms || [])
+        // Usa la funzione centralizzata per determinare il mese di default
+        const defaultMonth = getDefaultMonth()
+        if (ms && ms.includes(defaultMonth)) {
+          setSelectedMonth(defaultMonth)
+        } else if (ms && ms.length > 0) {
+          setSelectedMonth(ms[0])
+        }
+      })
+      .catch(error => {
+        console.error('Errore nel caricamento dei mesi:', error)
+        setMonths([])
+      })
     
     // Carica le categorie per i filtri
-    fetch(`/api/categories?type=${chartType}`).then(r => r.json()).then(setCategories)
+    fetch(`/api/categories?type=${chartType}`)
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento delle categorie')
+        return r.json()
+      })
+      .then(setCategories)
+      .catch(error => {
+        console.error('Errore nel caricamento delle categorie:', error)
+        setCategories([])
+      })
   }, [chartType])
 
   useEffect(() => {
     if (!selectedMonth) { setData([]); return }
     const apiEndpoint = chartType === 'expenses' ? '/api/expenses' : '/api/incomes'
-    fetch(`${apiEndpoint}?month=${selectedMonth}`).then(r => r.json()).then(setData)
+    fetch(`${apiEndpoint}?month=${selectedMonth}`)
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento dei dati')
+        return r.json()
+      })
+      .then(setData)
+      .catch(error => {
+        console.error('Errore nel caricamento dei dati:', error)
+        setData([])
+      })
   }, [selectedMonth, chartType])
 
   // Filtra i dati in base ai filtri selezionati
   const filteredData = useMemo(() => {
+    if (!data || !Array.isArray(data)) return []
     return data.filter(item => {
+      if (!item || !item.mainCategory || !item.subcategory) return false
       const matchesMainCategory = !filterMainCategory || item.mainCategory.name === filterMainCategory
       const matchesSubcategory = !filterSubcategory || item.subcategory.name === filterSubcategory
       return matchesMainCategory && matchesSubcategory
@@ -48,7 +84,11 @@ export default function AnalysisSection () {
 
   const analysis = useMemo(() => {
     const acc = {}
+    if (!filteredData || !Array.isArray(filteredData)) {
+      return { labels: [], values: [] }
+    }
     for (const e of filteredData) {
+      if (!e || !e.subcategory || e.amount === undefined) continue
       const key = e.subcategory.name
       acc[key] = (acc[key] || 0) + Number(e.amount)
     }
@@ -59,13 +99,19 @@ export default function AnalysisSection () {
 
   const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#8b5cf6', '#14b8a6', '#6366f1', '#d946ef', '#f59e0b', '#10b981', '#0ea5e9', '#ec4899']
 
-  const chartData = {
-    labels: analysis.labels,
-    datasets: [{ data: analysis.values, backgroundColor: colors }]
-  }
+  const chartData = useMemo(() => ({
+    labels: analysis.labels || [],
+    datasets: [{ 
+      data: analysis.values || [], 
+      backgroundColor: colors.slice(0, (analysis.labels || []).length)
+    }]
+  }), [analysis])
 
   const chartTitle = chartType === 'expenses' ? 'Uscite' : 'Entrate'
-  const totalAmount = analysis.values.reduce((sum, value) => sum + value, 0)
+  const totalAmount = useMemo(() => {
+    if (!analysis.values || !Array.isArray(analysis.values)) return 0
+    return analysis.values.reduce((sum, value) => sum + (Number(value) || 0), 0)
+  }, [analysis.values])
 
   // Reset filtri quando cambia il tipo di grafico
   useEffect(() => {
@@ -181,15 +227,23 @@ export default function AnalysisSection () {
               € {totalAmount.toFixed(2)}
             </p>
           </div>
-          <Pie 
-            data={chartData} 
-            options={{ 
-              plugins: { 
-                legend: { position: 'bottom' }, 
-                title: { display: false }
-              } 
-            }} 
-          />
+          {chartData.labels.length > 0 && chartData.datasets[0].data.length > 0 ? (
+            <Pie 
+              data={chartData} 
+              options={{ 
+                plugins: { 
+                  legend: { position: 'bottom' }, 
+                  title: { display: false }
+                },
+                responsive: true,
+                maintainAspectRatio: true
+              }} 
+            />
+          ) : (
+            <div className='text-center py-8 text-gray-500'>
+              Nessun dato disponibile per il grafico
+            </div>
+          )}
         </div>
       ) : (
         <div className='text-center py-12'>

@@ -13,15 +13,29 @@ export default function SettingsSection () {
   const sp = useSearchParams()
 
   async function loadExpenses () {
-    const data = await fetch('/api/categories?type=expenses').then(r => r.json())
-    setExpenseCategories(data)
-    if (data.length && !selectedExpense) setSelectedExpense(data[0].name)
+    try {
+      const response = await fetch('/api/categories?type=expenses')
+      if (!response.ok) throw new Error('Errore nel caricamento delle categorie spese')
+      const data = await response.json()
+      setExpenseCategories(data || [])
+      if (data && data.length && !selectedExpense) setSelectedExpense(data[0].name)
+    } catch (error) {
+      console.error('Errore nel caricamento delle categorie spese:', error)
+      setExpenseCategories([])
+    }
   }
 
   async function loadIncomes () {
-    const data = await fetch('/api/categories?type=incomes').then(r => r.json())
-    setIncomeCategories(data)
-    if (data.length && !selectedIncome) setSelectedIncome(data[0].name)
+    try {
+      const response = await fetch('/api/categories?type=incomes')
+      if (!response.ok) throw new Error('Errore nel caricamento delle categorie entrate')
+      const data = await response.json()
+      setIncomeCategories(data || [])
+      if (data && data.length && !selectedIncome) setSelectedIncome(data[0].name)
+    } catch (error) {
+      console.error('Errore nel caricamento delle categorie entrate:', error)
+      setIncomeCategories([])
+    }
   }
 
   async function load () {
@@ -40,21 +54,33 @@ export default function SettingsSection () {
     const fd = new FormData(form)
     const type = activeTab === 'expenses' ? 'expenses' : 'incomes'
     fd.set('type', type)
-    await fetch('/api/categories', { method: 'POST', body: fd })
-    form.reset()
-    if (activeTab === 'expenses') {
-      await loadExpenses()
-    } else {
-      await loadIncomes()
+    try {
+      const response = await fetch('/api/categories', { method: 'POST', body: fd })
+      if (!response.ok) throw new Error('Errore nella creazione della categoria')
+      form.reset()
+      if (activeTab === 'expenses') {
+        await loadExpenses()
+      } else {
+        await loadIncomes()
+      }
+    } catch (error) {
+      console.error('Errore nella creazione della categoria:', error)
+      alert('Errore durante la creazione della categoria')
     }
   }
 
   async function deleteMain (name) {
-    await fetch(`/api/categories/${encodeURIComponent(name)}`, { method: 'DELETE' })
-    if (activeTab === 'expenses') {
-      await loadExpenses()
-    } else {
-      await loadIncomes()
+    try {
+      const response = await fetch(`/api/categories/${encodeURIComponent(name)}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Errore nell\'eliminazione della categoria')
+      if (activeTab === 'expenses') {
+        await loadExpenses()
+      } else {
+        await loadIncomes()
+      }
+    } catch (error) {
+      console.error('Errore nell\'eliminazione della categoria:', error)
+      alert('Errore durante l\'eliminazione della categoria')
     }
   }
 
@@ -66,18 +92,24 @@ export default function SettingsSection () {
     const categories = activeTab === 'expenses' ? expenseCategories : incomeCategories
     const category = categories.find(c => c.name === categoryName)
     if (category) {
-      fd.set('mainCategoryId', category.id)
-      await fetch('/api/subcategories', { method: 'POST', body: fd })
-      
-      // Reset del form solo se esiste
-      if (form) {
-        form.reset()
-      }
-      
-      if (activeTab === 'expenses') {
-        await loadExpenses()
-      } else {
-        await loadIncomes()
+      try {
+        fd.set('mainCategoryId', category.id)
+        const response = await fetch('/api/subcategories', { method: 'POST', body: fd })
+        if (!response.ok) throw new Error('Errore nella creazione della sottocategoria')
+        
+        // Reset del form solo se esiste
+        if (form) {
+          form.reset()
+        }
+        
+        if (activeTab === 'expenses') {
+          await loadExpenses()
+        } else {
+          await loadIncomes()
+        }
+      } catch (error) {
+        console.error('Errore nella creazione della sottocategoria:', error)
+        alert('Errore durante la creazione della sottocategoria')
       }
     } else {
       alert('Errore: Categoria non trovata. Ricarica la pagina e riprova.')
@@ -85,11 +117,17 @@ export default function SettingsSection () {
   }
 
   async function deleteSub (mainName, subName) {
-    await fetch(`/api/subcategories?main=${encodeURIComponent(mainName)}&sub=${encodeURIComponent(subName)}`, { method: 'DELETE' })
-    if (activeTab === 'expenses') {
-      await loadExpenses()
-    } else {
-      await loadIncomes()
+    try {
+      const response = await fetch(`/api/subcategories?main=${encodeURIComponent(mainName)}&sub=${encodeURIComponent(subName)}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Errore nell\'eliminazione della sottocategoria')
+      if (activeTab === 'expenses') {
+        await loadExpenses()
+      } else {
+        await loadIncomes()
+      }
+    } catch (error) {
+      console.error('Errore nell\'eliminazione della sottocategoria:', error)
+      alert('Errore durante l\'eliminazione della sottocategoria')
     }
   }
 

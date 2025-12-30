@@ -11,23 +11,64 @@ export default function ExpensesSection () {
   const [filterSubcategory, setFilterSubcategory] = useState('')
   const [editingExpense, setEditingExpense] = useState(null)
 
+  // Funzione per mappare i valori del database ai valori visualizzati
+  const getPaymentMethodDisplayName = (value) => {
+    const paymentMethodMap = {
+      'contanti': 'Contanti',
+      'bonifico': 'Bonifico',
+      'pos': 'POS',
+      'carta': 'Carta di Credito',
+      'paypal': 'PayPal',
+      'altro': 'Altro'
+    }
+    return paymentMethodMap[value] || value
+  }
+
   useEffect(() => {
-    fetch('/api/expenses/months').then(r => r.json()).then(data => {
-      setMonths(data)
-      // Usa la funzione centralizzata per determinare il mese di default
-      const defaultMonth = getDefaultMonth()
-      if (data.includes(defaultMonth)) {
-        setSelectedMonth(defaultMonth)
-      } else if (data.length > 0) {
-        setSelectedMonth(data[0])
-      }
-    })
-    fetch('/api/categories?type=expenses').then(r => r.json()).then(setCategories)
+    fetch('/api/expenses/months')
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento dei mesi')
+        return r.json()
+      })
+      .then(data => {
+        setMonths(data || [])
+        // Usa la funzione centralizzata per determinare il mese di default
+        const defaultMonth = getDefaultMonth()
+        if (data && data.includes(defaultMonth)) {
+          setSelectedMonth(defaultMonth)
+        } else if (data && data.length > 0) {
+          setSelectedMonth(data[0])
+        }
+      })
+      .catch(error => {
+        console.error('Errore nel caricamento dei mesi:', error)
+        setMonths([])
+      })
+    
+    fetch('/api/categories?type=expenses')
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento delle categorie')
+        return r.json()
+      })
+      .then(setCategories)
+      .catch(error => {
+        console.error('Errore nel caricamento delle categorie:', error)
+        setCategories([])
+      })
   }, [])
 
   useEffect(() => {
     if (!selectedMonth) { setExpenses([]); return }
-    fetch(`/api/expenses?month=${selectedMonth}`).then(r => r.json()).then(setExpenses)
+    fetch(`/api/expenses?month=${selectedMonth}`)
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento delle spese')
+        return r.json()
+      })
+      .then(setExpenses)
+      .catch(error => {
+        console.error('Errore nel caricamento delle spese:', error)
+        setExpenses([])
+      })
   }, [selectedMonth])
 
   // Imposta la data corrente nel form quando viene caricato
@@ -42,9 +83,15 @@ export default function ExpensesSection () {
 
   const totalsByMain = useMemo(() => {
     const totals = {}
-    for (const cat of categories) totals[cat.name] = 0
+    if (!categories || !Array.isArray(categories)) return totals
+    for (const cat of categories) {
+      if (cat && cat.name) totals[cat.name] = 0
+    }
+    if (!expenses || !Array.isArray(expenses)) return totals
     for (const e of expenses) {
-      totals[e.mainCategory.name] = (totals[e.mainCategory.name] || 0) + Number(e.amount)
+      if (e && e.mainCategory && e.mainCategory.name && e.amount !== undefined) {
+        totals[e.mainCategory.name] = (totals[e.mainCategory.name] || 0) + Number(e.amount)
+      }
     }
     return totals
   }, [expenses, categories])
@@ -53,7 +100,9 @@ export default function ExpensesSection () {
 
   // Filtra le spese in base ai filtri selezionati
   const filteredExpenses = useMemo(() => {
+    if (!expenses || !Array.isArray(expenses)) return []
     return expenses.filter(expense => {
+      if (!expense || !expense.mainCategory || !expense.subcategory) return false
       const matchesMainCategory = !filterMainCategory || expense.mainCategory.name === filterMainCategory
       const matchesSubcategory = !filterSubcategory || expense.subcategory.name === filterSubcategory
       return matchesMainCategory && matchesSubcategory
@@ -85,7 +134,8 @@ export default function ExpensesSection () {
 
   // Ordina le categorie per valore (dal più alto al più basso)
   const sortedCategories = useMemo(() => {
-    const maxAmount = Math.max(...Object.values(totalsByMain))
+    const values = Object.values(totalsByMain)
+    const maxAmount = values.length > 0 ? Math.max(...values) : 0
     return categories
       .map(cat => ({
         ...cat,
@@ -122,8 +172,14 @@ export default function ExpensesSection () {
       
       // Ricarica le spese per il mese selezionato
       if (selectedMonth) {
-        const updatedExpenses = await fetch(`/api/expenses?month=${selectedMonth}`).then(r => r.json())
-        setExpenses(updatedExpenses)
+        try {
+          const response = await fetch(`/api/expenses?month=${selectedMonth}`)
+          if (!response.ok) throw new Error('Errore nel caricamento delle spese')
+          const updatedExpenses = await response.json()
+          setExpenses(updatedExpenses || [])
+        } catch (error) {
+          console.error('Errore nel caricamento delle spese aggiornate:', error)
+        }
       }
     } catch (error) {
       console.error('Errore durante l\'inserimento:', error)
@@ -132,13 +188,19 @@ export default function ExpensesSection () {
   }
 
   async function refreshMonths (newMonth) {
-    const ms = await fetch('/api/expenses/months').then(r => r.json())
-    setMonths(ms)
-    // Mantieni la logica del mese di default
-    const defaultMonth = getDefaultMonth()
-    const toUse = newMonth && ms.includes(newMonth) ? newMonth : 
-                  (ms.includes(defaultMonth) ? defaultMonth : (ms[0] || ''))
-    setSelectedMonth(toUse)
+    try {
+      const response = await fetch('/api/expenses/months')
+      if (!response.ok) throw new Error('Errore nel caricamento dei mesi')
+      const ms = await response.json()
+      setMonths(ms || [])
+      // Mantieni la logica del mese di default
+      const defaultMonth = getDefaultMonth()
+      const toUse = newMonth && ms && ms.includes(newMonth) ? newMonth : 
+                    (ms && ms.includes(defaultMonth) ? defaultMonth : (ms && ms[0] || ''))
+      setSelectedMonth(toUse)
+    } catch (error) {
+      console.error('Errore nel refresh dei mesi:', error)
+    }
   }
 
   async function deleteExpense (id) {
@@ -281,7 +343,7 @@ export default function ExpensesSection () {
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Categoria</label>
-            <select name='mainCategoryId' value={editingExpense ? editingExpense.mainCategory?.name : selectedMain} onChange={e => setSelectedMain(e.target.value)} className='w-full px-4 py-2 border rounded-lg'>
+            <select name='mainCategoryId' value={editingExpense ? (editingExpense.mainCategory?.name || '') : (selectedMain || '')} onChange={e => setSelectedMain(e.target.value)} className='w-full px-4 py-2 border rounded-lg'>
               {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
           </div>
@@ -403,25 +465,30 @@ export default function ExpensesSection () {
               }
             </li>
           ) : (
-            [...filteredExpenses].sort((a, b) => new Date(b.date) - new Date(a.date)).map(e => (
-              <li key={e.id} className='flex items-center justify-between bg-gray-50 p-3 rounded-lg'>
-                <div className='flex items-center gap-3'>
-                  <span className='text-sm text-gray-500'>{new Date(e.date).toLocaleDateString('it-IT')}</span>
-                  <div>
-                    <p className='font-semibold'>{e.description}</p>
-                    <p className='text-sm text-gray-500'>{e.mainCategory.name} {'>'} {e.subcategory.name}</p>
-                    <p className='text-xs text-blue-600'>{e.paymentMethod || 'contanti'}</p>
+            [...filteredExpenses]
+              .filter(e => e && e.id && e.date)
+              .sort((a, b) => new Date(b.date) - new Date(a.date))
+              .map(e => (
+                <li key={e.id} className='flex items-center justify-between bg-gray-50 p-3 rounded-lg'>
+                  <div className='flex items-center gap-3'>
+                    <span className='text-sm text-gray-500'>{new Date(e.date).toLocaleDateString('it-IT')}</span>
+                    <div>
+                      <p className='font-semibold'>{e.description || 'N/A'}</p>
+                      <p className='text-sm text-gray-500'>
+                        {e.mainCategory?.name || 'N/A'} {'>'} {e.subcategory?.name || 'N/A'}
+                      </p>
+                      <p className='text-xs text-blue-600'>{getPaymentMethodDisplayName(e.paymentMethod || 'contanti')}</p>
+                    </div>
                   </div>
-                </div>
-                <div className='flex items-center gap-4'>
-                  <p className='font-semibold text-lg'>€ {Number(e.amount).toFixed(2)}</p>
-                  <button onClick={() => setEditingExpense(e)} className='text-blue-500 hover:text-blue-700 text-sm font-medium px-2 py-1 border border-blue-500 rounded hover:bg-blue-50'>
-                    Modifica
-                  </button>
-                  <button onClick={() => deleteExpense(e.id)} className='text-gray-400 hover:text-red-500 text-2xl font-bold'>&times;</button>
-                </div>
-              </li>
-            ))
+                  <div className='flex items-center gap-4'>
+                    <p className='font-semibold text-lg'>€ {Number(e.amount || 0).toFixed(2)}</p>
+                    <button onClick={() => setEditingExpense(e)} className='text-blue-500 hover:text-blue-700 text-sm font-medium px-2 py-1 border border-blue-500 rounded hover:bg-blue-50'>
+                      Modifica
+                    </button>
+                    <button onClick={() => deleteExpense(e.id)} className='text-gray-400 hover:text-red-500 text-2xl font-bold'>&times;</button>
+                  </div>
+                </li>
+              ))
           )}
         </ul>
       </div>

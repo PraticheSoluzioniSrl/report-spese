@@ -11,18 +11,50 @@ export default function IncomesSection () {
   const [filterSubcategory, setFilterSubcategory] = useState('')
   const [editingIncome, setEditingIncome] = useState(null)
 
+  // Funzione per mappare i valori del database ai valori visualizzati
+  const getPaymentMethodDisplayName = (value) => {
+    const paymentMethodMap = {
+      'contanti': 'Contanti',
+      'bonifico': 'Bonifico',
+      'pos': 'POS',
+      'carta': 'Carta di Credito',
+      'paypal': 'PayPal',
+      'altro': 'Altro'
+    }
+    return paymentMethodMap[value] || value
+  }
+
   useEffect(() => {
-    fetch('/api/incomes/months').then(r => r.json()).then(data => {
-      setMonths(data)
-      // Usa la funzione centralizzata per determinare il mese di default
-      const defaultMonth = getDefaultMonth()
-      if (data.includes(defaultMonth)) {
-        setSelectedMonth(defaultMonth)
-      } else if (data.length > 0) {
-        setSelectedMonth(data[0])
-      }
-    })
-    fetch('/api/categories?type=incomes').then(r => r.json()).then(setCategories)
+    fetch('/api/incomes/months')
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento dei mesi')
+        return r.json()
+      })
+      .then(data => {
+        setMonths(data || [])
+        // Usa la funzione centralizzata per determinare il mese di default
+        const defaultMonth = getDefaultMonth()
+        if (data && data.includes(defaultMonth)) {
+          setSelectedMonth(defaultMonth)
+        } else if (data && data.length > 0) {
+          setSelectedMonth(data[0])
+        }
+      })
+      .catch(error => {
+        console.error('Errore nel caricamento dei mesi:', error)
+        setMonths([])
+      })
+    
+    fetch('/api/categories?type=incomes')
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento delle categorie')
+        return r.json()
+      })
+      .then(setCategories)
+      .catch(error => {
+        console.error('Errore nel caricamento delle categorie:', error)
+        setCategories([])
+      })
   }, [])
 
   // Imposta la data corrente nel form quando viene caricato
@@ -37,7 +69,16 @@ export default function IncomesSection () {
 
   useEffect(() => {
     if (!selectedMonth) { setIncomes([]); return }
-    fetch(`/api/incomes?month=${selectedMonth}`).then(r => r.json()).then(setIncomes)
+    fetch(`/api/incomes?month=${selectedMonth}`)
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento delle entrate')
+        return r.json()
+      })
+      .then(setIncomes)
+      .catch(error => {
+        console.error('Errore nel caricamento delle entrate:', error)
+        setIncomes([])
+      })
   }, [selectedMonth])
 
   const totalsByMain = useMemo(() => {
@@ -373,7 +414,7 @@ export default function IncomesSection () {
                   <div>
                     <p className='font-semibold'>{e.description}</p>
                     <p className='text-sm text-gray-500'>{e.mainCategory.name} {'>'} {e.subcategory.name}</p>
-                    <p className='text-xs text-green-600'>{e.paymentMethod || 'contanti'}</p>
+                    <p className='text-xs text-green-600'>{getPaymentMethodDisplayName(e.paymentMethod || 'contanti')}</p>
                   </div>
                 </div>
                 <div className='flex items-center gap-4'>
