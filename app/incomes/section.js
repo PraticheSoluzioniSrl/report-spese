@@ -20,6 +20,7 @@ export default function IncomesSection () {
       'pos': 'POS',
       'carta': 'Carta di Credito',
       'paypal': 'PayPal',
+      'addebito': 'Addebito su conto',
       'altro': 'Altro'
     }
     return paymentMethodMap[value] || value
@@ -379,6 +380,7 @@ export default function IncomesSection () {
               <option value='pos'>POS</option>
               <option value='carta'>Carta di Credito</option>
               <option value='paypal'>PayPal</option>
+              <option value='addebito'>Addebito su conto</option>
               <option value='altro'>Altro</option>
             </select>
           </div>
