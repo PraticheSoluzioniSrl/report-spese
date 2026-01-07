@@ -33,13 +33,21 @@ export default function DeadlinesSection () {
     }
   }
 
-  async function togglePaid (id, paid) {
+  async function togglePaid (id, newPaidValue) {
     try {
-      const response = await fetch(`/api/deadlines/${id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ paid }) })
-      if (!response.ok) throw new Error('Errore nell\'aggiornamento della scadenza')
-      load()
+      const response = await fetch(`/api/deadlines/${id}`, { 
+        method: 'PATCH', 
+        headers: { 'content-type': 'application/json' }, 
+        body: JSON.stringify({ paid: newPaidValue })
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Errore nell\'aggiornamento della scadenza')
+      }
+      await load() // Ricarica le scadenze dopo l'aggiornamento
     } catch (error) {
       console.error('Errore nell\'aggiornamento della scadenza:', error)
+      alert('Errore durante l\'aggiornamento della scadenza: ' + error.message)
     }
   }
 
@@ -91,11 +99,17 @@ export default function DeadlinesSection () {
             {deadlines.length === 0 ? (
               <li className='text-center text-gray-500 py-8'>Nessuna scadenza registrata.</li>
             ) : deadlines.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).map(d => {
-              const isOverdue = new Date(d.dueDate) < new Date() && !d.paid
+              const paid = Boolean(d.paid) // Assicurati che paid sia sempre un booleano
+              const isOverdue = new Date(d.dueDate) < new Date() && !paid
               return (
-                <li key={d.id} className={`deadline-item flex items-center justify-between p-3 rounded-lg ${d.paid ? 'line-through text-gray-400 bg-gray-100' : 'bg-white shadow-sm'} ${isOverdue ? 'border-l-4 border-red-500' : ''}`}>
+                <li key={d.id} className={`deadline-item flex items-center justify-between p-3 rounded-lg ${paid ? 'line-through text-gray-400 bg-gray-100' : 'bg-white shadow-sm'} ${isOverdue ? 'border-l-4 border-red-500' : ''}`}>
                   <div className='flex items-center gap-3'>
-                    <input type='checkbox' className='h-5 w-5 rounded border-gray-300 text-blue-600' checked={d.paid} onChange={e => togglePaid(d.id, e.target.checked)} />
+                    <input 
+                      type='checkbox' 
+                      className='h-5 w-5 rounded border-gray-300 text-blue-600 cursor-pointer' 
+                      checked={paid} 
+                      onChange={e => togglePaid(d.id, e.target.checked)} 
+                    />
                     <div>
                       <p className='font-semibold'>{d.description}</p>
                       <p className='text-sm'>{new Date(d.dueDate).toLocaleDateString('it-IT')} {isOverdue ? <span className='text-red-600 font-semibold'>(Scaduto)</span> : null}</p>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMainCategories, deleteMainCategory, getExpenses, getIncomes } from '../../../../lib/supabase-db'
+import { getMainCategories, deleteMainCategory, getExpenses, getIncomes, getSubcategories } from '../../../../lib/supabase-db'
 import { getDemoCategories, deleteDemoCategory, getDemoExpenses } from '../../../../lib/demo-storage'
 
 export async function DELETE (_req, { params }) {
@@ -18,6 +18,13 @@ export async function DELETE (_req, { params }) {
     }
     
     console.log('📋 Categoria trovata:', { id: cat.id, name: cat.name })
+    
+    // Controlla se la categoria ha sottocategorie associate
+    const subcategories = await getSubcategories(cat.id)
+    if (subcategories && subcategories.length > 0) {
+      console.log('❌ Categoria ha sottocategorie associate:', subcategories.length)
+      return NextResponse.json({ error: 'Impossibile eliminare: la categoria ha sottocategorie associate. Elimina prima tutte le sottocategorie.' }, { status: 400 })
+    }
     
     // Controlla se la categoria è usata in qualche spesa o entrata
     const expenses = await getExpenses()
