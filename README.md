@@ -1,73 +1,101 @@
-Cosimo - Gestionale spese (Next.js 14)
+# Cosimo - Gestionale Spese
 
-## Setup Locale (Modalità Demo)
+Sistema completo di gestione spese e entrate con persistenza dati su Supabase.
 
-Il progetto funziona **immediatamente** in modalità demo senza configurazione database.
+## 🚀 Quick Start
+
+### Setup Locale
 
 1. **Installa le dipendenze:**
    ```bash
    npm install
    ```
 
-2. **Avvia il server di sviluppo:**
-   ```bash
-   npm run dev
-   ```
-
-3. **Apri il browser su:** `http://localhost:3000`
-
-4. **Accedi con password:** `C0S1M0`
-
-### Modalità Demo
-- ✅ Funziona senza database configurato
-- ✅ Dati salvati in memoria locale (persistono durante la sessione)
-- ✅ Tutte le funzionalità disponibili: spese, entrate, categorie, conti, scadenze
-- ⚠️ I dati vengono persi al riavvio del server (normale per modalità demo)
-
-### Configurazione Database (Opzionale)
-
-Se vuoi persistenza dei dati, configura Supabase:
-
-1. **Crea un file `.env.local`** (opzionale):
+2. **Configura Supabase** (opzionale per sviluppo locale):
+   - Crea un file `.env.local`:
    ```
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
-2. **Esegui lo script di inizializzazione:**
+3. **Avvia il server:**
    ```bash
-   npm run init-db
+   npm run dev
    ```
 
-## Deploy su Vercel
+4. **Accedi:**
+   - URL: `http://localhost:3000`
+   - Password: `C0S1M0`
 
-1. **Preparazione:**
-   - Assicurati che il progetto sia su GitHub/GitLab/Bitbucket
-   - Vai su [vercel.com](https://vercel.com) e importa il repository
+## 📦 Deploy Produzione
 
-2. **Configurazione (opzionale, solo se usi Supabase):**
-   - Aggiungi le variabili d'ambiente su Vercel:
-     - `NEXT_PUBLIC_SUPABASE_URL`
-     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+### Prerequisiti
+- Account Supabase: [supabase.com](https://supabase.com)
+- Account Vercel: [vercel.com](https://vercel.com)
+- Account GitHub: [github.com](https://github.com)
 
-3. **Deploy:**
-   - Vercel rileverà automaticamente Next.js
-   - Il deploy funzionerà anche senza database (modalità demo)
+### Passi per il Deploy
 
-⚠️ **Nota:** Su Vercel in modalità demo, i dati non persisteranno tra le richieste (ogni funzione serverless è isolata). Per produzione con persistenza, configura Supabase.
+1. **Setup Supabase Database**
+   - Segui le istruzioni in `SETUP_SUPABASE.md`
+   - Esegui lo script `supabase-production.sql`
 
-## Accesso
+2. **Deploy su Vercel**
+   - Segui le istruzioni complete in `DEPLOY_PRODUZIONE.md`
+   - Configura le variabili d'ambiente per Supabase
 
-- **Password di default:** `C0S1M0`
-- **Cambio password:** disponibile nella pagina Impostazioni
+3. **Verifica**
+   - Accedi all'applicazione deployata
+   - Cambia la password di default
+   - Testa che i dati persistano
 
-## Funzionalità
+## 📚 Documentazione
 
-- ✅ **Spese:** gestione completa delle spese mensili
-- ✅ **Entrate:** pagina dedicata per registrare e consultare le entrate mensili
-- ✅ **Categorie:** gestione categorie e sottocategorie per spese e entrate
-- ✅ **Conti:** gestione di più conti con saldi
-- ✅ **Scadenze:** gestione scadenze e pagamenti
-- ✅ **Import massivo:** carica Excel/CSV di spese o entrate
-- ✅ **Analisi:** grafici e statistiche delle spese/entrate
+- **`SETUP_SUPABASE.md`** - Guida completa per configurare Supabase
+- **`DEPLOY_PRODUZIONE.md`** - Istruzioni dettagliate per il deploy
+- **`DEPLOY_ISTRUZIONI.md`** - Guida generale al deploy
 
+## 🔐 Sicurezza
+
+- Password hashata con bcrypt
+- Database protetto con Supabase
+- Connessioni HTTPS su Vercel
+- ⚠️ **Cambia la password di default** dopo il primo accesso!
+
+## ✨ Funzionalità
+
+- ✅ Gestione spese e entrate
+- ✅ Categorie e sottocategorie personalizzabili
+- ✅ Gestione conti multipli
+- ✅ Scadenze e pagamenti
+- ✅ Import Excel/CSV
+- ✅ Analisi e grafici
+- ✅ Persistenza dati su Supabase
+- ✅ Backup automatico database
+
+## 🛠️ Tecnologie
+
+- **Framework**: Next.js 14
+- **Database**: Supabase (PostgreSQL)
+- **Styling**: Tailwind CSS
+- **Charts**: Chart.js
+- **Hosting**: Vercel
+
+## 📝 Note
+
+- Il progetto è configurato per funzionare **solo con Supabase** in produzione
+- La modalità demo è disponibile solo per sviluppo locale
+- Tutti i dati sono salvati permanentemente nel database Supabase
+
+## 🐛 Troubleshooting
+
+Vedi `DEPLOY_PRODUZIONE.md` per la sezione troubleshooting completa.
+
+## 📄 Licenza
+
+Progetto privato - Tutti i diritti riservati
+
+---
+
+**Versione**: 1.0.0 - Produzione  
+**Ultimo aggiornamento**: 2026
