@@ -8,7 +8,10 @@ export async function POST (req) {
     const name = String(fd.get('name') || '').trim()
     const mainCategoryId = String(fd.get('mainCategoryId') || '').trim()
     
+    console.log('📥 POST /api/subcategories ricevuto:', { name, mainCategoryId })
+    
     if (!name || !mainCategoryId) {
+      console.error('❌ Parametri mancanti:', { name, mainCategoryId })
       return NextResponse.json({ error: 'Il nome e la categoria principale sono obbligatori' }, { status: 400 })
     }
     
@@ -18,16 +21,18 @@ export async function POST (req) {
     const isDemoId = mainCategoryId.startsWith('cat-') || mainCategoryId.startsWith('demo-')
     const categoryId = isDemoId ? mainCategoryId : (isNaN(parseInt(mainCategoryId)) ? mainCategoryId : parseInt(mainCategoryId))
     
+    console.log('🔧 ID elaborato:', { mainCategoryId, isDemoId, categoryId })
+    
     const subcategory = await createSubcategory({ name, mainCategoryId: categoryId })
     if (!subcategory) {
-      console.error('createSubcategory ha restituito null/undefined')
+      console.error('❌ createSubcategory ha restituito null/undefined per:', { name, categoryId })
       return NextResponse.json({ error: 'Categoria principale non trovata o errore nella creazione' }, { status: 404 })
     }
     
-    console.log('Sottocategoria creata con successo:', subcategory)
+    console.log('✅ Sottocategoria creata con successo:', subcategory)
     return NextResponse.json({ ok: true, subcategory })
   } catch (error) {
-    console.error('Errore nella creazione della sottocategoria:', error)
+    console.error('❌ Errore nella creazione della sottocategoria:', error)
     console.error('Stack trace:', error.stack)
     return NextResponse.json({ error: error.message || 'Errore interno del server' }, { status: 500 })
   }

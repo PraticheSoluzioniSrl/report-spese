@@ -52,9 +52,21 @@ export async function POST (req) {
 
     // Usa Supabase se configurato, altrimenti demo storage
     const mainCategories = await getMainCategories()
-    const main = mainCategories.find(cat => cat.name === mainName)
+    // Filtra solo le categorie di tipo "expenses" per le spese
+    // Include anche categorie senza tipo esplicito (per retrocompatibilità)
+    const expenseCategories = mainCategories.filter(cat => {
+      if (!cat.type) return true // Include categorie senza tipo (saranno trattate come expenses)
+      return cat.type === 'expenses'
+    })
+    const main = expenseCategories.find(cat => cat.name === mainName)
     if (!main) {
-      return NextResponse.json({ error: `Categoria principale "${mainName}" non trovata` }, { status: 404 })
+      // Log per debug
+      console.error('Categoria non trovata:', {
+        mainName,
+        availableCategories: expenseCategories.map(c => ({ name: c.name, type: c.type, id: c.id })),
+        allCategories: mainCategories.map(c => ({ name: c.name, type: c.type, id: c.id }))
+      })
+      return NextResponse.json({ error: `Categoria principale "${mainName}" non trovata o non è una categoria di spese` }, { status: 404 })
     }
 
     const subcategories = await getSubcategories(main.id)
@@ -70,6 +82,8 @@ export async function POST (req) {
       date: inputDate,
       mainCategoryId: main.id,
       subcategoryId: sub.id,
+      mainCategoryName: mainName,
+      subcategoryName: subName,
       paymentMethod,
       accountId: accountId || null
     }

@@ -269,18 +269,26 @@ export default function ExpensesSection () {
   }, [categories])
 
   const [selectedMain, setSelectedMain] = useState('')
+  const [editingCategory, setEditingCategory] = useState('')
+  
   useEffect(() => {
     if (categories.length) setSelectedMain(categories[0].name)
   }, [categories])
 
-  const subcatsForSelected = flatSubcats[selectedMain] || []
-
-  // Aggiorna selectedMain quando si modifica una spesa
+  // Aggiorna selectedMain e editingCategory quando si modifica una spesa
   useEffect(() => {
     if (editingExpense && editingExpense.mainCategory?.name) {
-      setSelectedMain(editingExpense.mainCategory.name)
+      const categoryName = editingExpense.mainCategory.name
+      setSelectedMain(categoryName)
+      setEditingCategory(categoryName)
+    } else {
+      setEditingCategory('')
     }
   }, [editingExpense])
+
+  // Usa editingCategory quando si sta modificando, altrimenti selectedMain
+  const currentMainCategory = editingExpense ? (editingCategory || editingExpense.mainCategory?.name || '') : selectedMain
+  const subcatsForSelected = flatSubcats[currentMainCategory] || []
 
   // Funzione per esportare le spese
   async function exportExpenses(month = null) {
@@ -360,13 +368,30 @@ export default function ExpensesSection () {
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Categoria</label>
-            <select name='mainCategoryId' value={editingExpense ? (editingExpense.mainCategory?.name || '') : (selectedMain || '')} onChange={e => setSelectedMain(e.target.value)} className='w-full px-4 py-2 border rounded-lg'>
+            <select 
+              name='mainCategoryId' 
+              value={currentMainCategory} 
+              onChange={e => {
+                const newCategory = e.target.value
+                if (editingExpense) {
+                  setEditingCategory(newCategory)
+                } else {
+                  setSelectedMain(newCategory)
+                }
+              }} 
+              className='w-full px-4 py-2 border rounded-lg'
+            >
               {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Sottocategoria</label>
-            <select name='subcategoryName' className='w-full px-4 py-2 border rounded-lg' defaultValue={editingExpense?.subcategory?.name || ''}>
+            <select 
+              name='subcategoryName' 
+              className='w-full px-4 py-2 border rounded-lg' 
+              defaultValue={editingExpense?.subcategory?.name || ''}
+              key={currentMainCategory} // Force re-render quando cambia categoria
+            >
               <option value=''>Seleziona sottocategoria</option>
               {subcatsForSelected?.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -386,9 +411,13 @@ export default function ExpensesSection () {
             <label className='block text-sm font-medium text-gray-600 mb-1'>Conto</label>
             <select name='accountId' className='w-full px-4 py-2 border rounded-lg' defaultValue={editingExpense?.accountId || ''}>
               <option value=''>Nessun conto</option>
-              {accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.name}</option>
-              ))}
+              {accounts && accounts.length > 0 ? (
+                accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                ))
+              ) : (
+                <option disabled>Caricamento conti...</option>
+              )}
             </select>
           </div>
           <div className='md:col-span-2'>

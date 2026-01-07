@@ -6,9 +6,9 @@ export const dynamic = 'force-dynamic'
 
 export default function IncomesPage () {
   return (
-    <div>
+    <div className='min-h-screen bg-gray-100 py-4'>
       <NavBar logout={logoutAction} />
-      <div className='w-full max-w-5xl mx-auto'>
+      <div className='w-full max-w-5xl mx-auto px-4'>
         <IncomesSection />
       </div>
     </div>

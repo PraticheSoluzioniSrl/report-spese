@@ -61,6 +61,17 @@ export default function IncomesSection () {
         console.error('Errore nel caricamento delle categorie:', error)
         setCategories([])
       })
+    
+    fetch('/api/accounts')
+      .then(r => {
+        if (!r.ok) throw new Error('Errore nel caricamento dei conti')
+        return r.json()
+      })
+      .then(setAccounts)
+      .catch(error => {
+        console.error('Errore nel caricamento dei conti:', error)
+        setAccounts([])
+      })
   }, [])
 
   // Imposta la data corrente nel form quando viene caricato
@@ -146,10 +157,42 @@ export default function IncomesSection () {
     e.preventDefault()
     const form = e.currentTarget
     const formData = new FormData(form)
-    await fetch('/api/incomes', { method: 'POST', body: formData })
-    form.reset()
-    const m = formData.get('date').toString().slice(0, 7)
-    await refreshMonths(m)
+    
+    try {
+      const response = await fetch('/api/incomes', { method: 'POST', body: formData })
+      if (!response.ok) {
+        const error = await response.json()
+        alert(`Errore nell'inserimento: ${error.error || 'Errore sconosciuto'}`)
+        return
+      }
+      
+      form.reset()
+      // Reimposta la data corrente dopo il reset
+      const today = new Date()
+      const todayStr = today.toISOString().split('T')[0]
+      const dateInput = form.querySelector('input[name="date"]')
+      if (dateInput) {
+        dateInput.value = todayStr
+      }
+      
+      const m = formData.get('date').toString().slice(0, 7)
+      await refreshMonths(m)
+      
+      // Ricarica le entrate per il mese selezionato
+      if (selectedMonth) {
+        try {
+          const response = await fetch(`/api/incomes?month=${selectedMonth}`)
+          if (!response.ok) throw new Error('Errore nel caricamento delle entrate')
+          const updatedIncomes = await response.json()
+          setIncomes(updatedIncomes || [])
+        } catch (error) {
+          console.error('Errore nel caricamento delle entrate aggiornate:', error)
+        }
+      }
+    } catch (error) {
+      console.error('Errore durante l\'inserimento:', error)
+      alert('Errore durante l\'inserimento dell\'entrata')
+    }
   }
 
   async function refreshMonths (newMonth) {
@@ -201,18 +244,26 @@ export default function IncomesSection () {
   }, [categories])
 
   const [selectedMain, setSelectedMain] = useState('')
+  const [editingCategory, setEditingCategory] = useState('')
+  
   useEffect(() => {
     if (categories.length) setSelectedMain(categories[0].name)
   }, [categories])
 
-  const subcatsForSelected = flatSubcats[selectedMain] || []
-
-  // Aggiorna selectedMain quando si modifica un'entrata
+  // Aggiorna selectedMain e editingCategory quando si modifica un'entrata
   useEffect(() => {
     if (editingIncome && editingIncome.mainCategory?.name) {
-      setSelectedMain(editingIncome.mainCategory.name)
+      const categoryName = editingIncome.mainCategory.name
+      setSelectedMain(categoryName)
+      setEditingCategory(categoryName)
+    } else {
+      setEditingCategory('')
     }
   }, [editingIncome])
+
+  // Usa editingCategory quando si sta modificando, altrimenti selectedMain
+  const currentMainCategory = editingIncome ? (editingCategory || editingIncome.mainCategory?.name || '') : selectedMain
+  const subcatsForSelected = flatSubcats[currentMainCategory] || []
 
   // Funzione per esportare le entrate
   async function exportIncomes(month = null) {
@@ -292,13 +343,31 @@ export default function IncomesSection () {
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Categoria</label>
-            <select name='mainCategoryId' value={editingIncome ? editingIncome.mainCategory?.name : selectedMain} onChange={e => setSelectedMain(e.target.value)} className='w-full px-4 py-2 border rounded-lg'>
+            <select 
+              name='mainCategoryId' 
+              value={currentMainCategory} 
+              onChange={e => {
+                const newCategory = e.target.value
+                if (editingIncome) {
+                  setEditingCategory(newCategory)
+                } else {
+                  setSelectedMain(newCategory)
+                }
+              }} 
+              className='w-full px-4 py-2 border rounded-lg'
+            >
               {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-600 mb-1'>Sottocategoria</label>
-            <select name='subcategoryName' className='w-full px-4 py-2 border rounded-lg' defaultValue={editingIncome?.subcategory?.name || ''}>
+            <select 
+              name='subcategoryName' 
+              className='w-full px-4 py-2 border rounded-lg' 
+              defaultValue={editingIncome?.subcategory?.name || ''}
+              key={currentMainCategory} // Force re-render quando cambia categoria
+            >
+              <option value=''>Seleziona sottocategoria</option>
               {subcatsForSelected?.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -317,9 +386,13 @@ export default function IncomesSection () {
             <label className='block text-sm font-medium text-gray-600 mb-1'>Conto</label>
             <select name='accountId' className='w-full px-4 py-2 border rounded-lg' defaultValue={editingIncome?.accountId || ''}>
               <option value=''>Nessun conto</option>
-              {accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.name}</option>
-              ))}
+              {accounts && accounts.length > 0 ? (
+                accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                ))
+              ) : (
+                <option disabled>Caricamento conti...</option>
+              )}
             </select>
           </div>
           <div className='md:col-span-2'>

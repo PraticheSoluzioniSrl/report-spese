@@ -111,13 +111,27 @@ export default function SettingsSection () {
     const form = e.currentTarget
     const fd = new FormData(form)
     const categoryName = fd.get('mainName')
+    const subcategoryName = fd.get('name')
     const categories = activeTab === 'expenses' ? expenseCategories : incomeCategories
     const category = categories.find(c => c.name === categoryName)
-    if (category) {
+    
+    console.log('🔍 addSub chiamata:', { categoryName, subcategoryName, category, categories })
+    
+    if (category && category.id) {
       try {
         fd.set('mainCategoryId', category.id)
+        console.log('📤 Invio richiesta con mainCategoryId:', category.id)
         const response = await fetch('/api/subcategories', { method: 'POST', body: fd })
-        if (!response.ok) throw new Error('Errore nella creazione della sottocategoria')
+        const data = await response.json()
+        
+        if (!response.ok) {
+          const errorMsg = data.error || 'Errore nella creazione della sottocategoria'
+          console.error('❌ Errore API:', errorMsg, data)
+          alert(errorMsg)
+          return
+        }
+        
+        console.log('✅ Sottocategoria creata con successo:', data)
         
         // Reset del form solo se esiste
         if (form) {
@@ -130,10 +144,11 @@ export default function SettingsSection () {
           await loadIncomes()
         }
       } catch (error) {
-        console.error('Errore nella creazione della sottocategoria:', error)
-        alert('Errore durante la creazione della sottocategoria')
+        console.error('❌ Errore nella creazione della sottocategoria:', error)
+        alert('Errore durante la creazione della sottocategoria: ' + error.message)
       }
     } else {
+      console.error('❌ Categoria non trovata:', { categoryName, category, categories })
       alert('Errore: Categoria non trovata. Ricarica la pagina e riprova.')
     }
   }

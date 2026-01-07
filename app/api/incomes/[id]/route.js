@@ -18,6 +18,8 @@ export async function PUT(req, { params }) {
     const { id } = params
     const fd = await req.formData()
     
+    console.log('📝 PUT /api/incomes/[id] - Aggiornamento entrata:', id)
+    
     const description = String(fd.get('description') || '').trim()
     const amount = parseFloat(String(fd.get('amount') || '0'))
     const dateStr = String(fd.get('date') || '')
@@ -25,6 +27,8 @@ export async function PUT(req, { params }) {
     const subName = String(fd.get('subcategoryName') || '').trim()
     const paymentMethod = String(fd.get('paymentMethod') || 'contanti').trim()
     const accountId = String(fd.get('accountId') || '').trim() || null
+    
+    console.log('📝 Dati ricevuti:', { description, amount, dateStr, mainName, subName, paymentMethod, accountId })
 
     // Validazione dei campi
     if (!description) {
@@ -43,8 +47,28 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: 'Formato data non valido' }, { status: 400 })
     }
 
+    // Recupera l'entrata esistente per verificare se la categoria è cambiata
+    const { getIncomes, getMainCategories, getSubcategories } = await import('../../../../lib/supabase-db')
+    let existingIncome = null
+    let categoryChanged = false
+    try {
+      const allIncomes = await getIncomes()
+      existingIncome = allIncomes.find(i => String(i.id) === String(id))
+      if (existingIncome && existingIncome.mainCategory) {
+        categoryChanged = existingIncome.mainCategory.name !== mainName
+        console.log('📋 Entrata esistente:', { 
+          id: existingIncome.id, 
+          oldCategory: existingIncome.mainCategory.name,
+          newCategory: mainName,
+          categoryChanged: categoryChanged,
+          subcategoryName: existingIncome.subcategory?.name 
+        })
+      }
+    } catch (error) {
+      console.warn('⚠️ Errore nel recupero dell\'entrata esistente (continuo comunque):', error.message)
+    }
+    
     // Trova categoria e sottocategoria
-    const { getMainCategories, getSubcategories } = await import('../../../../lib/supabase-db')
     const categories = await getMainCategories()
     
     const main = categories.find(cat => cat.name === mainName)
@@ -52,21 +76,66 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: `Categoria principale "${mainName}" non trovata` }, { status: 404 })
     }
     
-    // Ottieni le sottocategorie per la categoria specifica
+    // Ottieni le sottocategorie per la categoria specifica (NUOVA categoria se è cambiata)
     const subcategories = await getSubcategories(main.id)
     let sub = null
     
-    if (subName) {
-      sub = subcategories.find(sub => sub.name === subName)
+    // Gestisci il caso in cui subName è vuoto o non specificato
+    const trimmedSubName = subName ? subName.trim() : ''
+    
+    if (trimmedSubName) {
+      // Sottocategoria specificata: cerca nella nuova categoria
+      sub = subcategories.find(s => s.name === trimmedSubName)
       if (!sub) {
-        return NextResponse.json({ error: `Sottocategoria "${subName}" non trovata per la categoria "${mainName}"` }, { status: 404 })
+        console.error(`❌ Sottocategoria "${trimmedSubName}" non trovata per la categoria "${mainName}"`)
+        console.error('📋 Sottocategorie disponibili:', subcategories.map(s => s.name))
+        return NextResponse.json({ error: `Sottocategoria "${trimmedSubName}" non trovata per la categoria "${mainName}"` }, { status: 404 })
       }
     } else {
-      // Se non c'è sottocategoria, usa la prima disponibile per quella categoria
-      sub = subcategories[0]
-      if (!sub) {
-        return NextResponse.json({ error: `Nessuna sottocategoria trovata per la categoria "${mainName}"` }, { status: 404 })
+      // Nessuna sottocategoria specificata: usa SEMPRE quella originale dell'entrata
+      // Questo è più sicuro e prevedibile
+      if (existingIncome && existingIncome.subcategoryId) {
+        // Cerca la sottocategoria originale per ID nella nuova categoria
+        sub = subcategories.find(s => String(s.id) === String(existingIncome.subcategoryId))
+        
+        // Se non trovata per ID nella nuova categoria, prova per nome
+        if (!sub && existingIncome.subcategory && existingIncome.subcategory.name) {
+          sub = subcategories.find(s => s.name === existingIncome.subcategory.name)
+        }
+        
+        // Se ancora non trovata, potrebbe essere che la categoria è cambiata
+        // In questo caso, usa la prima disponibile della nuova categoria
+        if (!sub) {
+          if (categoryChanged) {
+            console.log('⚠️ Categoria cambiata e sottocategoria originale non trovata nella nuova categoria')
+            if (subcategories && subcategories.length > 0) {
+              sub = subcategories[0]
+              console.log(`✅ Uso la prima sottocategoria disponibile della nuova categoria: "${sub.name}"`)
+            }
+          } else {
+            // Categoria non cambiata ma sottocategoria non trovata: errore
+            console.error(`❌ Sottocategoria originale non trovata per la categoria "${mainName}"`)
+            console.error('📋 Sottocategorie disponibili:', subcategories.map(s => ({ id: s.id, name: s.name })))
+            return NextResponse.json({ error: `Sottocategoria originale non trovata. Seleziona una sottocategoria.` }, { status: 400 })
+          }
+        } else {
+          console.log(`✅ Uso la sottocategoria originale: "${sub.name}"`)
+        }
+      } else {
+        // Nessuna sottocategoria originale disponibile: usa la prima della nuova categoria
+        if (subcategories && subcategories.length > 0) {
+          sub = subcategories[0]
+          console.log(`⚠️ Nessuna sottocategoria originale, uso la prima disponibile: "${sub.name}"`)
+        } else {
+          console.error(`❌ Nessuna sottocategoria trovata per la categoria "${mainName}"`)
+          return NextResponse.json({ error: `Nessuna sottocategoria trovata per la categoria "${mainName}". Aggiungi almeno una sottocategoria.` }, { status: 404 })
+        }
       }
+    }
+    
+    if (!sub || !sub.id) {
+      console.error('❌ Sottocategoria non valida:', sub)
+      return NextResponse.json({ error: 'Sottocategoria non valida' }, { status: 400 })
     }
 
     // Aggiorna l'entrata
@@ -77,12 +146,31 @@ export async function PUT(req, { params }) {
       date: inputDate,
       mainCategoryId: main.id,
       subcategoryId: sub.id,
+      mainCategoryName: mainName,
+      subcategoryName: sub.name, // Usa il nome della sottocategoria trovata
       paymentMethod,
       accountId: accountId || null
     }
     
-    const updatedIncome = await updateIncome(incomeData)
+    console.log('📝 Chiamata updateIncome con:', incomeData)
+    let updatedIncome
+    try {
+      updatedIncome = await updateIncome(incomeData)
+      console.log('📝 Risultato updateIncome:', updatedIncome)
+    } catch (updateError) {
+      console.error('❌ Errore durante updateIncome:', updateError.message)
+      console.error('❌ Stack trace:', updateError.stack)
+      return NextResponse.json({ 
+        error: 'Errore durante l\'aggiornamento dell\'entrata',
+        details: process.env.NODE_ENV === 'development' ? updateError.message : undefined
+      }, { status: 500 })
+    }
 
+    if (!updatedIncome) {
+      console.error('❌ Entrata non trovata con ID:', id)
+      return NextResponse.json({ error: 'Entrata non trovata' }, { status: 404 })
+    }
+    
     return NextResponse.json({ 
       ok: true, 
       income: {
@@ -91,13 +179,23 @@ export async function PUT(req, { params }) {
         amount: updatedIncome.amount,
         date: updatedIncome.date,
         mainCategory: { name: mainName },
-        subcategory: { name: subName },
-        paymentMethod: updatedIncome.paymentMethod || paymentMethod
+        subcategory: { name: sub.name }, // Usa il nome della sottocategoria trovata
+        paymentMethod: updatedIncome.paymentMethod || paymentMethod,
+        accountId: updatedIncome.accountId || accountId || null
       }
     })
   } catch (error) {
-    console.error('Errore durante l\'aggiornamento dell\'entrata:', error)
-    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
+    console.error('❌ Errore durante l\'aggiornamento dell\'entrata:', error)
+    console.error('❌ Stack trace:', error.stack)
+    console.error('❌ Dettagli errore:', {
+      message: error.message,
+      name: error.name,
+      id: params.id
+    })
+    return NextResponse.json({ 
+      error: 'Errore interno del server',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    }, { status: 500 })
   }
 }
 
