@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getAccounts, createAccount } from '../../../lib/supabase-db'
-import { calculateAccountBalance } from '../../../lib/demo-storage'
+import { getAccounts, createAccount, calculateAccountBalance } from '../../../lib/supabase-db'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
     const accounts = await getAccounts()
-    // Calcola il saldo corrente per ogni conto (usa demo storage per il calcolo se necessario)
+    // Calcola il saldo corrente per ogni conto
     const accountsWithBalance = await Promise.all(accounts.map(async account => ({
       ...account,
       currentBalance: await calculateAccountBalance(account.id)
