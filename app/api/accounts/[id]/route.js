@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getDemoAccounts, updateDemoAccount, deleteDemoAccount } from '../../../../lib/demo-storage'
+import { updateAccount, deleteAccount } from '../../../../lib/supabase-db'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +14,7 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: 'Il nome del conto è obbligatorio' }, { status: 400 })
     }
     
-    const account = updateDemoAccount(id, name, initialBalance)
+    const account = await updateAccount(id, name, initialBalance)
     if (!account) {
       return NextResponse.json({ error: 'Conto non trovato' }, { status: 404 })
     }
@@ -22,14 +22,16 @@ export async function PUT(req, { params }) {
     return NextResponse.json({ ok: true, account })
   } catch (error) {
     console.error('Errore nell\'aggiornamento del conto:', error)
-    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
+    return NextResponse.json({ 
+      error: error.message || 'Errore interno del server' 
+    }, { status: 500 })
   }
 }
 
 export async function DELETE(req, { params }) {
   try {
     const { id } = params
-    const deleted = deleteDemoAccount(id)
+    const deleted = await deleteAccount(id)
     
     if (!deleted) {
       return NextResponse.json({ error: 'Conto non trovato' }, { status: 404 })
@@ -38,7 +40,9 @@ export async function DELETE(req, { params }) {
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Errore nell\'eliminazione del conto:', error)
-    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
+    return NextResponse.json({ 
+      error: error.message || 'Errore interno del server' 
+    }, { status: 500 })
   }
 }
 
