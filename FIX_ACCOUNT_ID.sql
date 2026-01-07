@@ -39,6 +39,7 @@ UPDATE incomes SET payment_method = 'contanti' WHERE payment_method IS NULL;
 -- ========================================
 
 -- Verifica che tutto sia stato creato correttamente
+-- (Query opzionale - puoi eseguirla separatamente se vuoi verificare)
 SELECT 
     table_name,
     column_name,
