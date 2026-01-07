@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMainCategories, deleteMainCategory, getExpenses } from '../../../../lib/supabase-db'
+import { getMainCategories, deleteMainCategory, getExpenses, getIncomes } from '../../../../lib/supabase-db'
 import { getDemoCategories, deleteDemoCategory, getDemoExpenses } from '../../../../lib/demo-storage'
 
 export async function DELETE (_req, { params }) {
