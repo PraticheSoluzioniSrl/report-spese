@@ -98,7 +98,18 @@ export default function DeadlinesSection () {
           <ul className='space-y-3'>
             {deadlines.length === 0 ? (
               <li className='text-center text-gray-500 py-8'>Nessuna scadenza registrata.</li>
-            ) : deadlines.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).map(d => {
+            ) : deadlines.sort((a, b) => {
+              // Ordina: prima quelle non pagate (scadute o prossime), poi quelle pagate
+              const aPaid = Boolean(a.paid)
+              const bPaid = Boolean(b.paid)
+              
+              // Se una è pagata e l'altra no, quella non pagata viene prima
+              if (aPaid && !bPaid) return 1
+              if (!aPaid && bPaid) return -1
+              
+              // Se entrambe hanno lo stesso stato (pagate o non pagate), ordina per data
+              return new Date(a.dueDate) - new Date(b.dueDate)
+            }).map(d => {
               const paid = Boolean(d.paid) // Assicurati che paid sia sempre un booleano
               const isOverdue = new Date(d.dueDate) < new Date() && !paid
               return (
