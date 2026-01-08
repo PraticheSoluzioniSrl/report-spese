@@ -44,16 +44,23 @@ export async function DELETE (req) {
     const main = url.searchParams.get('main')
     const sub = url.searchParams.get('sub')
     
+    console.log('🗑️ Eliminazione sottocategoria richiesta:', { main, sub })
+    
     if (!main || !sub) {
-      return NextResponse.json({ error: 'main and sub parameters required' }, { status: 400 })
+      console.error('❌ Parametri mancanti:', { main, sub })
+      return NextResponse.json({ error: 'Parametri main e sub sono obbligatori' }, { status: 400 })
     }
     
     // Usa Supabase se configurato, altrimenti demo storage
     await deleteSubcategory({ mainCategoryName: main, subcategoryName: sub })
     
+    console.log('✅ Sottocategoria eliminata con successo')
     return NextResponse.json({ ok: true })
   } catch (error) {
-    console.error('Errore nella cancellazione della sottocategoria:', error)
-    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
+    console.error('❌ Errore nella cancellazione della sottocategoria:', error)
+    console.error('❌ Stack:', error.stack)
+    return NextResponse.json({ 
+      error: error.message || 'Errore interno del server' 
+    }, { status: 500 })
   }
 }

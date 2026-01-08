@@ -5,11 +5,22 @@ export async function PATCH (req, { params }) {
   try {
     const id = String(params.id)
     const body = await req.json()
-    await updateDeadline(id, { paid: Boolean(body.paid) })
-    return NextResponse.json({ ok: true })
+    
+    console.log('🔧 PATCH /api/deadlines/[id] chiamata con:', { id, body })
+    
+    const paidValue = Boolean(body.paid)
+    console.log('🔧 Valore paid da applicare:', paidValue)
+    
+    const result = await updateDeadline(id, { paid: paidValue })
+    
+    console.log('✅ Scadenza aggiornata con successo:', result)
+    return NextResponse.json({ ok: true, deadline: result })
   } catch (error) {
-    console.error('Errore durante l\'aggiornamento della scadenza:', error)
-    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 })
+    console.error('❌ Errore durante l\'aggiornamento della scadenza:', error)
+    console.error('❌ Stack:', error.stack)
+    return NextResponse.json({ 
+      error: error.message || 'Errore interno del server' 
+    }, { status: 500 })
   }
 }
 
